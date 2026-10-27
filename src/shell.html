@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Yandex Direct: Junior IT akademiya</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&display=swap">
+<style>
+/* Claude dashboard'idagi dizayn tokenlari: shu sahifa ham Claude'dagi bilan bir xil ko'rinadi */
+:root {
+  --color-bg: #f6f6f3; --color-panel: #ffffff; --color-fg: #1c1d1f; --color-fg-muted: #6a6c70; --color-border-line: #e3e3dd;
+  --color-ok: #1d7a4c; --color-warn: #a86a00; --color-bad: #c0392b;
+  --series-1: #d6960f; --series-2: #1f7a68;
+  --cds-chart-grid: #ececE6; --cds-chart-axis: #c9c9c1; --cds-chart-muted: #cfcfc6; --cds-chart-reference: #9a9a92;
+  --cds-surface-popover: #ffffff; --cds-border: #e3e3dd; --cds-shadow-popover: 0 6px 20px rgba(20, 20, 10, .10); --cds-text-secondary: #6a6c70;
+  --font-anthropic-sans: "Golos Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-anthropic-serif: "Golos Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --cds-font-size-caption: 12px; --cds-font-size-body: 14px; --cds-font-size-heading: 16px; --cds-font-size-title: 26px; --cds-font-weight-medium: 500;
+  --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 12px; --cds-gap-lg: 24px;
+  --cds-pad-xs: 4px; --cds-pad-sm: 8px; --cds-pad-md: 12px; --cds-pad-lg: 18px;
+  --cds-radius: 10px; --cds-dur-slow: 300ms;
+}
+/* Dashboard o'zi doim to'q: sahifa foni ham shunga mos */
+* { box-sizing: border-box; }
+html, body { background: #0d0f14; color-scheme: dark; }
+body { margin: 0; color: #e8eaf0; font: 14px/1.5 var(--font-anthropic-sans); }
+#dash-root { max-width: 1400px; margin: 0 auto; }
+.yd .dash-skeleton { color: transparent !important; background: #1f232d; border-radius: 4px; }
+.yd-banner { background: #151821; border: 1px solid #262a35; border-radius: 10px; padding: 14px 18px; margin: 16px; color: #ff6b6b; }
+.yd-foot { margin: 0; padding: 0 16px 24px; font-size: 12px; color: #8b92a3; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+// Claude dashboard API'sining kichik o'rnini bosuvchisi: ma'lumot data.json'dan olinadi,
+// Claude'da so'rov qiladigan sana filtrlari bu yerda saqlangan qatorlarni sana bo'yicha ajratadi.
+window.dash = (() => {
+  const calcs = [], listeners = [];
+  let cache = {}, raw = null, status = 'loading', message = '';
+  const params = {};
+  const RANGES = {
+    stats: ['stats', 'date_from', 'date_to'],
+    stats_cmp: ['stats', 'cmp_from', 'cmp_to'],
+    placements: ['placements', 'date_from', 'date_to'],
+    audience: ['audience', 'date_from', 'date_to'],
+    regions: ['regions', 'date_from', 'date_to']
+  };
+  const fire = () => listeners.forEach(fn => { try { fn(); } catch (e) { console.error(e); } });
+  const source = (id) => {
+    if (!raw) return undefined;
+    if (RANGES[id]) {
+      const [key, a, b] = RANGES[id], rows = raw[key];
+      return rows ? rows.filter(r => r.Date >= params[a] && r.Date <= params[b]) : undefined;
+    }
+    if (id === 'metrika') {
+      if (!raw.metrika) return undefined;
+      const rows = raw.metrika.filter(r => r.date >= params.date_from && r.date <= params.date_to);
+      return [{ date1: params.date_from, date2: params.date_to,
+        visits: rows.reduce((s, r) => s + r.visits, 0), form_submits: rows.reduce((s, r) => s + r.form_submits, 0) }];
+    }
+    return raw[id];
+  };
+  const value = (id) => id in cache ? cache[id] : source(id);
+  const compute = () => {
+    cache = {};
+    if (!raw) return;
+    for (const c of calcs) {
+      try { cache[c.id] = c.fn(...c.inputs.map(i => value(i) || [])); }
+      catch (e) { console.error('calc ' + c.id, e); cache[c.id] = undefined; }
+    }
+  };
+  let resizeTimer;
+  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(fire, 150); });
+  return {
+    colors: ['var(--series-1)', 'var(--series-2)'],
+    loader() {},
+    calc(id, spec) { calcs.push({ id, inputs: spec.inputs, fn: spec.fn }); },
+    data(id) {
+      if (status !== 'ok') return { status, data: [], message };
+      const v = value(id);
+      return v == null ? { status: 'error', data: [], message: id + ' yo\'q' } : { status: 'ok', data: v };
+    },
+    params: () => ({ ...params }),
+    setParams(p) { Object.assign(params, p); compute(); fire(); },
+    resetParams() {},
+    setLink() {},
+    onData(fn) { listeners.push(fn); try { fn(); } catch (e) { console.error(e); } },
+    load(url) {
+      return fetch(url, { cache: 'no-store' })
+        .then(r => { if (!r.ok) throw new Error('data.json topilmadi (' + r.status + ')'); return r.json(); })
+        .then(json => { raw = json; compute(); status = 'ok'; fire(); return json; })
+        .catch(err => { status = 'error'; message = err.message; fire(); throw err; });
+    }
+  };
+})();
+</script>
+</head>
+<body>
+<div id="dash-root">
+<div class="yd-banner" id="yd-banner" hidden></div>
+<!-- DASHBOARD -->
+<p class="yd-foot" id="yd-foot"></p>
+</div>
+<script>
+dash.load('data.json').then(d => {
+  const upd = new Date(d.updated).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' });
+  document.getElementById('yd-foot').textContent = 'Hisob: ' + d.login + ' · Valyuta: ' + d.currency + ' · Ma\'lumot yangilangan: ' + upd + ' (Toshkent vaqti)';
+}).catch(err => {
+  const b = document.getElementById('yd-banner');
+  b.hidden = false;
+  b.textContent = 'Ma\'lumot yuklanmadi: ' + err.message + '. Avval scripts/fetch_data.py ni ishga tushiring (README\'ga qarang).';
+});
+</script>
+</body>
+</html>

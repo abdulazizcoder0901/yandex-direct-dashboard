@@ -134,21 +134,23 @@ def get_balance(token, login):
 
 
 def get_metrika(token, counter_id, goal_id):
-    """Oxirgi 30 kunlik tashriflar va forma maqsadi. Xato bo'lsa None qaytaradi."""
+    """Oxirgi bir yildagi kunlik tashriflar va forma maqsadi. Xato bo'lsa None qaytaradi."""
     query = urllib.parse.urlencode({
         "ids": counter_id,
         "metrics": f"ym:s:visits,ym:s:goal{goal_id}reaches",
-        "date1": "30daysAgo",
-        "date2": "yesterday",
+        "dimensions": "ym:s:date",
+        "date1": "365daysAgo",
+        "date2": "today",
+        "limit": 1000,
     })
     status, _, text = request(METRIKA_API + "?" + query, headers={"Authorization": "OAuth " + token})
     try:
         data = json.loads(text)
         if status != 200:
             raise RuntimeError(text[:300])
-        q = data.get("query", {})
-        return [{"date1": q.get("date1"), "date2": q.get("date2"),
-                 "visits": float(data["totals"][0]), "form_submits": float(data["totals"][1])}]
+        return [{"date": row["dimensions"][0]["name"],
+                 "visits": float(row["metrics"][0]), "form_submits": float(row["metrics"][1])}
+                for row in data["data"]]
     except Exception as e:
         print("Ogohlantirish: Metrika ma'lumoti olinmadi:", e, file=sys.stderr)
         return None

@@ -1,6 +1,8 @@
 # Yandex Direct dashboard
 
-Junior IT akademiya reklama hisobi uchun dashboard. 30 kun, 90 kun yoki 1 yil oralig'ini tanlash mumkin, har bir ko'rsatkich oldingi shuncha kun bilan solishtiriladi.
+Junior IT akademiya reklama hisobi uchun dashboard, to'q fonda, tablarga bo'lingan (Umumiy, Telegram kanallari, Kampaniyalar, Auditoriya, Sayt va Metrika).
+
+Davr filtrlari: Bugun, Kecha, 7 kun, 14 kun, 30 kun, Shu oy, O'tgan oy, oy tanlovi va ixtiyoriy sana oralig'i. Har bir ko'rsatkich oldingi xuddi shuncha kun bilan solishtiriladi; "← O'tgan oyda shu sana" tugmasi o'tgan oydagi aynan shu sanalar bilan solishtiradi.
 
 - Konversiyalar, CPA, xarajat, kliklar, CPC va balans.
 - Kunlik xarajat va konversiyalar grafiklari.
@@ -10,7 +12,8 @@ Junior IT akademiya reklama hisobi uchun dashboard. 30 kun, 90 kun yoki 1 yil or
 - Metrika: saytga tashriflar va "Forma yuborildi" maqsadi.
 
 - `scripts/fetch_data.py` Yandex Direct API'dan butun tarix bo'yicha kunlik statistikani (kampaniya, kanal, yosh va jins, hudud), balansni va Metrika ma'lumotini olib, `site/data.json` faylini yozadi. Faqat Python standart kutubxonasi kerak.
-- `site/index.html` shu faylni o'qib, dashboardni chizadi. Sahifa Claude ichidagi dashboard bilan bir xil kodda yozilgan.
+- `src/dashboard.html` Claude ichidagi dashboard sahifasining aynan o'zi; `src/shell.html` uni oddiy sayt sifatida ishlatadi (ma'lumotni `data.json`'dan oladi va sana bo'yicha ajratadi).
+- `scripts/build_page.py` ikkalasini `site/index.html` ga yig'adi. `src/` dagi fayllarni o'zgartirsangiz, uni qayta ishga tushiring.
 - `.github/workflows/update.yml` har kuni soat 08:00 da (Toshkent vaqti) ma'lumotni yangilaydi va saytni GitHub Pages'ga joylaydi.
 
 `site/data.json` repoga yozilmaydi (`.gitignore`), ya'ni statistika Git tarixida saqlanmaydi.
@@ -53,7 +56,7 @@ So'ng brauzerda http://localhost:8000 ni oching.
 - Xarajat QQS bilan, hisob valyutasida (UZS).
 - Konversiyalar Direct hisoblagan, kampaniyada tanlangan maqsadlar bo'yicha, oxirgi bosish (LC) atribusiya modelida.
 - CPA = xarajat ÷ konversiyalar, CTR = kliklar ÷ ko'rsatishlar, CPC = xarajat ÷ kliklar.
-- Davrlar kecha bilan tugaydi; oldingi davr undan oldingi xuddi shuncha kun.
+- Sanalar Toshkent vaqti bo'yicha. "7 kun", "14 kun", "30 kun" bugungi kunni ham o'z ichiga oladi. Solishtirish davri tanlangan davrdan oldingi xuddi shuncha kun.
 - Konversiyasiz kanal: tanlangan davrda pul sarflangan, lekin birorta konversiya bo'lmagan kanal.
 - Telegram reklamasi ko'pchilik ko'rsatishlar uchun yosh va jinsni bermaydi, Direct barcha ko'rsatishlarni "kompyuter" deb yozadi.
 - Balans eski Live v4 API orqali olinadi (v5 API'da balans yo'q). Balans yoki Metrika olinmasa ham statistika baribir yangilanadi.
