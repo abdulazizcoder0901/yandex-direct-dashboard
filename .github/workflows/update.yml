@@ -1,21 +1,21 @@
-name: Dashboard yangilash
+name: Ma'lumotni yangilash
 
+# Har 10 daqiqada Yandex Direct'dan ma'lumot olib, "data" branchiga data.json yozadi.
+# Netlify'dagi sayt shu faylni o'qiydi, shuning uchun saytni qayta deploy qilish kerak emas.
 on:
   schedule:
-    - cron: "*/10 * * * *" # har 10 daqiqada (GitHub ba'zan bir necha daqiqa kechiktiradi)
+    - cron: "*/10 * * * *" # GitHub ba'zan bir necha daqiqa kechiktiradi
   workflow_dispatch: # Actions sahifasidan qo'lda ishga tushirish
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: false
+  group: data
+  cancel-in-progress: true
 
 jobs:
-  build:
+  update:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,27 +24,22 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Sahifani yig'ish
-        run: python scripts/build_page.py
-
       - name: Yandex Direct'dan ma'lumot olish
         env:
           YANDEX_DIRECT_TOKEN: ${{ secrets.YANDEX_DIRECT_TOKEN }}
           YANDEX_DIRECT_LOGIN: ${{ secrets.YANDEX_DIRECT_LOGIN }}
         run: python scripts/fetch_data.py
 
-      - uses: actions/configure-pages@v5
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
+      - name: data branchiga yozish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/out" && cp site/data.json "$RUNNER_TEMP/out/data.json"
+          cd "$RUNNER_TEMP/out"
+          git init -q -b data
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git commit -q -m "Ma'lumot: $(date -u +%Y-%m-%dT%H:%MZ)"
+          # Tarix o'smasin: data branchida doim bitta commit
+          git push -q --force "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" data

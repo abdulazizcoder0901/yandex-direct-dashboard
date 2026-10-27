@@ -93,10 +93,14 @@ window.dash = (() => {
       this._reload = setTimeout(() => this.load(this._url).catch(() => {}), 2000);
     },
     onData(fn) { listeners.push(fn); try { fn(); } catch (e) { console.error(e); } },
-    load(url) {
-      this._url = url;
-      return fetch(url, { cache: 'no-store' })
+    // Bir nechta manzil: birinchisi ochilmasa, keyingisi sinab ko'riladi
+    load(urls) {
+      this._url = urls;
+      const list = Array.isArray(urls) ? urls : [urls];
+      const attempt = (i) => fetch(list[i] + (list[i].includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' })
         .then(r => { if (!r.ok) throw new Error('data.json topilmadi (' + r.status + ')'); return r.json(); })
+        .catch(err => { if (i + 1 < list.length) return attempt(i + 1); throw err; });
+      return attempt(0)
         .then(json => { raw = json; compute(); status = 'ok'; fire(); return json; })
         .catch(err => { status = 'error'; message = err.message; fire(); throw err; });
     }
@@ -1395,13 +1399,18 @@ dash.calc('insights', {
 <p class="yd-foot" id="yd-foot"></p>
 </div>
 <script>
-dash.load('data.json').then(d => {
+// Ma'lumot GitHub'dagi "data" branchidan (har 10 daqiqada yangilanadi); kompyuterda sinash uchun yonidagi data.json
+const DATA_URLS = [
+  'https://raw.githubusercontent.com/abdulazizcoder0901/yandex-direct-dashboard/data/data.json',
+  'data.json'
+];
+dash.load(DATA_URLS).then(d => {
   const upd = new Date(d.updated).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' });
   document.getElementById('yd-foot').textContent = 'Hisob: ' + d.login + ' · Valyuta: ' + d.currency + ' · Ma\'lumot yangilangan: ' + upd + ' (Toshkent vaqti)';
 }).catch(err => {
   const b = document.getElementById('yd-banner');
   b.hidden = false;
-  b.textContent = 'Ma\'lumot yuklanmadi: ' + err.message + '. Avval scripts/fetch_data.py ni ishga tushiring (README\'ga qarang).';
+  b.textContent = 'Ma\'lumot yuklanmadi: ' + err.message + '. GitHub Actions\'da "Ma\'lumotni yangilash" ishlaganini tekshiring (README\'ga qarang).';
 });
 </script>
 </body>

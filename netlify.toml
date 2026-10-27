@@ -1,0 +1,9 @@
+# Netlify: sayt "site" papkasidan, build kerak emas (ma'lumot GitHub'dagi "data" branchidan o'qiladi)
+[build]
+  publish = "site"
+  command = "echo 'build kerak emas'"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Robots-Tag = "noindex, nofollow"
