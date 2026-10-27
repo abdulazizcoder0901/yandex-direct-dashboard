@@ -204,6 +204,8 @@ def main():
     # API bermaydigan, kabinetdan qo'lda qo'shilgan e'lonlar (hech qachon ko'rsatilmaganlar)
     manual = ROOT / "data" / "manual_ads.json"
     out["manual_ads"] = json.loads(manual.read_text(encoding="utf-8")) if manual.exists() else []
+    for r in out["manual_ads"]:
+        r["Thumb"] = r.get("ThumbFile") if (ROOT / "site" / str(r.get("ThumbFile"))).exists() else None
     out["metrika"] = get_metrika(token, counter_id, goal_id)
 
     OUT.parent.mkdir(parents=True, exist_ok=True)

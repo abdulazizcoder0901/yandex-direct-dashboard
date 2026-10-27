@@ -7,7 +7,9 @@
     "AdGroupName": "junior_uzb_500",
     "Title": "Zo'r kurslar faqat shaharda!",
     "Text": "Ko'p ota-onalar doim shu fikrda bo'lishadi.",
-    "Url": "junior-it.uz"
+    "Url": "junior-it.uz",
+    "Thumb": "/_blob/78886944001ec4c5e03b61f6d4f4686c",
+    "ThumbFile": "thumbs/1924865162580785738.png"
   },
   {
     "AdId": "1924864578464641777",
@@ -17,7 +19,9 @@
     "AdGroupName": "junior_uzb_500",
     "Title": "Bolalar maktabdan so'ng charchab kursga ham bora olmaydi",
     "Text": "Bu holat aniq ko'p onalarga tanish!",
-    "Url": "junior-it.uz"
+    "Url": "junior-it.uz",
+    "Thumb": "/_blob/b25e2c526e70f11c5868e29a2ff938e8",
+    "ThumbFile": "thumbs/1924864578464641777.png"
   },
   {
     "AdId": "1924848475557293171",
@@ -27,6 +31,44 @@
     "AdGroupName": "junior_uzb_500",
     "Title": "Katta odam bo'lish uchun shaharga borish shart emas.",
     "Text": "Yoshi kattalarda bir gap bor, yaxshi o'qish uchun shaharga borish kerak....",
-    "Url": "junior-it.uz"
+    "Url": "junior-it.uz",
+    "Thumb": "/_blob/2be515e0a240e9b9e0d20fc73ed155b8",
+    "ThumbFile": "thumbs/1924848475557293171.png"
+  },
+  {
+    "CampaignId": "708246185",
+    "CampaignName": "Junior_22.10.26",
+    "AdGroupId": "5733567957",
+    "AdGroupName": "junior_uzb_500",
+    "Url": "junior-it.uz",
+    "AdId": "1904736668423282040",
+    "Title": "Farzandingiz matematika o'qib pul topadi.",
+    "Text": "Junior Akademiyasi o'quvchilari: • Dasturlash;...",
+    "Thumb": "/_blob/2a1fd1084b6aba2dff41e9bb54eab234",
+    "ThumbFile": "thumbs/1904736668423282040.png"
+  },
+  {
+    "CampaignId": "708246185",
+    "CampaignName": "Junior_22.10.26",
+    "AdGroupId": "5733567957",
+    "AdGroupName": "junior_uzb_500",
+    "Url": "junior-it.uz",
+    "AdId": "1924847831313919930",
+    "Title": "Barcha onajonlar aniq shu natijani kutishadi.",
+    "Text": "Onajonlar doim farzandini yaxshi natijalarga erishishini istaydi, lekin hozir telefonlar bunga yo'l qo'ymayapti....",
+    "Thumb": "/_blob/274c6a7202b6d71badee90c1a3408a84",
+    "ThumbFile": "thumbs/1924847831313919930.png"
+  },
+  {
+    "CampaignId": "708246185",
+    "CampaignName": "Junior_22.10.26",
+    "AdGroupId": "5733567957",
+    "AdGroupName": "junior_uzb_500",
+    "Url": "junior-it.uz",
+    "AdId": "1924846069303772166",
+    "Title": "Farzandingiz sovuqda uydan chiqmasdan kasbli bo'lsin!",
+    "Text": "Junior Akademiyasi o'quvchilari hozirgacha online, uydan chiqmasdan dasturlash va dizayn sohalarini ustozlar nazoratida...",
+    "Thumb": "/_blob/01660a2d25001dc013737b0bdeff57b4",
+    "ThumbFile": "thumbs/1924846069303772166.png"
   }
 ]

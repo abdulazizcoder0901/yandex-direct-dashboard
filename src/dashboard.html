@@ -117,6 +117,8 @@
 .yd-ent-head h2 { font-size: 20px; font-weight: 600; margin: 0; overflow-wrap: anywhere; }
 .yd-ent-title { flex-basis: 100%; order: 3; font-size: 15px; color: var(--color-fg); line-height: 1.5; }
 .yd-ent-title small { display: block; color: var(--color-fg-muted); font-size: 13px; }
+.yd-thumb { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; vertical-align: middle; margin-right: 10px; background: var(--color-bg); }
+.yd-thumb-lg { display: block; width: 120px; height: 120px; max-width: 100%; border-radius: 12px; object-fit: cover; margin-bottom: 10px; border: 1px solid var(--color-border-line); }
 .yd-table td[title] { cursor: help; }
 .yd-table tr.yd-link td[title] { cursor: pointer; }
 .yd-chip { display: inline-block; font-size: 12px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--color-border-line); color: var(--color-fg-muted); white-space: nowrap; }
@@ -533,7 +535,7 @@ dash.calc('entities', {
     // API bermaydigan, kabinetdan qo'shilgan e'lonlar: statistikasi yo'q, faqat nomi va matni
     for (const r of manual_ads) for (const [level] of LEVELS) {
       const t = get(level, r);
-      if (level === 'ad') { t.title = r.Title || null; t.text = r.Text || null; }
+      if (level === 'ad') { t.title = r.Title || null; t.text = r.Text || null; t.thumb = r.Thumb || null; }
     }
     for (const r of stats) for (const [level] of LEVELS) {
       const t = get(level, r);
@@ -548,7 +550,7 @@ dash.calc('entities', {
       const cost = Math.round(t.cost * 100) / 100;
       const name = t.level === 'campaign' ? t.campaign_name : t.level === 'adgroup' ? t.adgroup_name : 'Kreativ ' + t.ad_no;
       const { days, ...rest } = t;
-      return { ...rest, name, title: t.title || null, text: t.text || null, cost, life_cost: Math.round(t.life_cost * 100) / 100,
+      return { ...rest, name, title: t.title || null, text: t.text || null, thumb: t.thumb || null, cost, life_cost: Math.round(t.life_cost * 100) / 100,
         active_days: days.size,
         status: !t.last_date ? 'Ko\'rsatilmagan' : t.last_date >= yesterday ? 'Faol' : 'To\'xtagan',
         ctr: t.impressions ? t.clicks / t.impressions : null,
@@ -1038,7 +1040,9 @@ dash.calc('insights', {
     const maxCost = d3.max(rows, r => r.cost) || 1;
     for (const r of rows) {
       const tr = tb.insertRow(); tr.dataset.key = r.id; tr.className = 'yd-link'; tr.tabIndex = 0;
-      const nameCell = tr.insertCell(); nameCell.textContent = r.name;
+      const nameCell = tr.insertCell();
+      if (r.thumb) { const im = document.createElement('img'); im.src = r.thumb; im.alt = ''; im.className = 'yd-thumb'; im.loading = 'lazy'; nameCell.append(im); }
+      nameCell.append(r.name);
       nameCell.title = fullName(r);
       for (const c of cols) {
         const td = tr.insertCell();
@@ -1074,6 +1078,7 @@ dash.calc('insights', {
     const tEl = document.getElementById('yd-ent-title');
     tEl.hidden = sel.level !== 'ad'; tEl.textContent = '';
     if (sel.level === 'ad') {
+      if (sel.thumb) { const im = document.createElement('img'); im.src = sel.thumb; im.alt = 'Kreativ rasmi'; im.className = 'yd-thumb-lg'; tEl.append(im); }
       tEl.append(sel.title || 'Sarlavhasi hali qo\'shilmagan');
       if (sel.text) { const sm = document.createElement('small'); sm.textContent = sel.text; tEl.append(sm); }
     }

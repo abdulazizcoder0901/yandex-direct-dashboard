@@ -24,6 +24,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Sahifani yig'ish
+        run: python scripts/build_page.py
+
       - name: Yandex Direct'dan ma'lumot olish
         env:
           YANDEX_DIRECT_TOKEN: ${{ secrets.YANDEX_DIRECT_TOKEN }}
