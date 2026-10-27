@@ -368,10 +368,17 @@ window.dash = (() => {
 
   <section class="yd-panel" id="kampaniyalar" role="tabpanel" hidden>
     <div class="yd-ent-panel" id="yd-camp-list">
-      <p class="yd-note">Kampaniyani bossangiz, guruhlari va kreativlari ochiladi.</p>
+      <div class="yd-tools">
+        <p class="yd-note">Kampaniyani bossangiz, guruhlari va kreativlari ochiladi.</p>
+        <div class="yd-seg" id="yd-camp-filter" role="group" aria-label="Kampaniyalarni davr bo'yicha ajratish">
+          <button data-f="ran" aria-pressed="true" title="Tanlangan davrda kamida bir marta ko'rsatilgan">Shu davrda ishlagan</button>
+          <button data-f="started" aria-pressed="false" title="Birinchi ko'rsatishi tanlangan davrga to'g'ri kelgan">Shu davrda yoqilgan</button>
+          <button data-f="all" aria-pressed="false">Barchasi</button>
+        </div>
+      </div>
       <div class="yd-card"><div class="yd-scroll">
         <table class="yd-table" id="yd-camp" data-source="entities" data-row-key="id">
-          <thead><tr><th data-field="name"><button data-k="name">Kampaniya</button></th><th data-field="status" class="yd-hide-narrow"><button data-k="status">Holat</button></th><th data-field="first_date" class="yd-hide-narrow"><button data-k="first_date">Yoqilgan</button></th><th data-field="last_date" class="yd-hide-narrow"><button data-k="last_date">O'chgan</button></th><th data-field="cost"><button data-k="cost">Rasxod</button></th><th data-field="impressions" class="yd-hide-narrow"><button data-k="impressions">Ko'rsatish</button></th><th data-field="clicks"><button data-k="clicks">Klik</button></th><th data-field="ctr" class="yd-hide-narrow"><button data-k="ctr">CTR</button></th><th data-field="cpc" class="yd-hide-narrow"><button data-k="cpc">CPC</button></th><th data-field="conversions"><button data-k="conversions">Konv.</button></th><th data-field="cr" class="yd-hide-narrow"><button data-k="cr">Lid %</button></th><th data-field="cpa"><button data-k="cpa">CPA</button></th><th data-field="roi" class="yd-hide-narrow"><button data-k="roi">ROI</button></th></tr></thead>
+          <thead><tr><th data-field="name"><button data-k="name">Kampaniya</button></th><th data-field="status" class="yd-hide-narrow"><button data-k="status">Holat</button></th><th data-field="created_date" class="yd-hide-narrow"><button data-k="created_date">Yaratilgan</button></th><th data-field="first_date" class="yd-hide-narrow"><button data-k="first_date">Yoqilgan</button></th><th data-field="last_date" class="yd-hide-narrow"><button data-k="last_date">O'chgan</button></th><th data-field="cost"><button data-k="cost">Rasxod</button></th><th data-field="impressions" class="yd-hide-narrow"><button data-k="impressions">Ko'rsatish</button></th><th data-field="clicks"><button data-k="clicks">Klik</button></th><th data-field="ctr" class="yd-hide-narrow"><button data-k="ctr">CTR</button></th><th data-field="cpc" class="yd-hide-narrow"><button data-k="cpc">CPC</button></th><th data-field="conversions"><button data-k="conversions">Konv.</button></th><th data-field="cr" class="yd-hide-narrow"><button data-k="cr">Lid %</button></th><th data-field="cpa"><button data-k="cpa">CPA</button></th><th data-field="roi" class="yd-hide-narrow"><button data-k="roi">ROI</button></th></tr></thead>
           <tbody></tbody>
         </table>
       </div></div>
@@ -388,6 +395,7 @@ window.dash = (() => {
         <span class="yd-stat" id="yd-ent-kind">—</span>
       </div>
       <div class="yd-dates">
+        <span>Yaratilgan: <b class="yd-ent" data-source="entities" data-field="created_date" data-where="id=">—</b></span>
         <span>Yoqilgan (birinchi ko'rsatish): <b class="yd-ent" data-source="entities" data-field="first_date" data-where="id=">—</b></span>
         <span>O'chgan (oxirgi ko'rsatish): <b class="yd-ent" data-source="entities" data-field="last_date" data-where="id=">—</b></span>
         <span>Ishlagan kunlar: <b class="yd-ent" data-source="entities" data-field="active_days" data-where="id=">—</b></span>
@@ -430,7 +438,7 @@ window.dash = (() => {
         </div>
         <div class="yd-scroll">
           <table class="yd-table" id="yd-children" data-source="entities" data-row-key="id">
-            <thead><tr><th data-field="name"><button data-k="name">Nomi</button></th><th data-field="status" class="yd-hide-narrow"><button data-k="status">Holat</button></th><th data-field="first_date" class="yd-hide-narrow"><button data-k="first_date">Yoqilgan</button></th><th data-field="last_date" class="yd-hide-narrow"><button data-k="last_date">O'chgan</button></th><th data-field="cost"><button data-k="cost">Rasxod</button></th><th data-field="impressions" class="yd-hide-narrow"><button data-k="impressions">Ko'rsatish</button></th><th data-field="clicks"><button data-k="clicks">Klik</button></th><th data-field="ctr" class="yd-hide-narrow"><button data-k="ctr">CTR</button></th><th data-field="cpc" class="yd-hide-narrow"><button data-k="cpc">CPC</button></th><th data-field="conversions"><button data-k="conversions">Konv.</button></th><th data-field="cr" class="yd-hide-narrow"><button data-k="cr">Lid %</button></th><th data-field="cpa"><button data-k="cpa">CPA</button></th><th data-field="roi" class="yd-hide-narrow"><button data-k="roi">ROI</button></th></tr></thead>
+            <thead><tr><th data-field="name"><button data-k="name">Nomi</button></th><th data-field="status" class="yd-hide-narrow"><button data-k="status">Holat</button></th><th data-field="created_date" class="yd-hide-narrow"><button data-k="created_date">Yaratilgan</button></th><th data-field="first_date" class="yd-hide-narrow"><button data-k="first_date">Yoqilgan</button></th><th data-field="last_date" class="yd-hide-narrow"><button data-k="last_date">O'chgan</button></th><th data-field="cost"><button data-k="cost">Rasxod</button></th><th data-field="impressions" class="yd-hide-narrow"><button data-k="impressions">Ko'rsatish</button></th><th data-field="clicks"><button data-k="clicks">Klik</button></th><th data-field="ctr" class="yd-hide-narrow"><button data-k="ctr">CTR</button></th><th data-field="cpc" class="yd-hide-narrow"><button data-k="cpc">CPC</button></th><th data-field="conversions"><button data-k="conversions">Konv.</button></th><th data-field="cr" class="yd-hide-narrow"><button data-k="cr">Lid %</button></th><th data-field="cpa"><button data-k="cpa">CPA</button></th><th data-field="roi" class="yd-hide-narrow"><button data-k="roi">ROI</button></th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -459,8 +467,8 @@ window.dash = (() => {
     <div class="yd-tools">
       <div class="yd-seg" id="yd-ad-filter" role="group" aria-label="Kreativlarni ajratish">
         <button data-f="all" aria-pressed="true">Hammasi</button>
-        <button data-f="on" aria-pressed="false">Ishlayotgan</button>
-        <button data-f="off" aria-pressed="false">To'xtagan</button>
+        <button data-f="on" aria-pressed="false">Yoniq</button>
+        <button data-f="off" aria-pressed="false">O'chiq</button>
         <button data-f="lead" aria-pressed="false">Lid bergan</button>
         <button data-f="nolead" aria-pressed="false">Pul ketib, lid bermagan</button>
       </div>
@@ -473,7 +481,7 @@ window.dash = (() => {
         </table>
       </div>
     </div>
-    <p class="yd-note">Ishlayotgan: kecha yoki bugun ko'rsatilgan. Kreativni bossangiz, uning sahifasi ochiladi.</p>
+    <p class="yd-note">Kabinetda o'chirilgan kampaniyaning hamma kreativi "O'chiq". Qolganlari: kecha yoki bugun ko'rsatilgan bo'lsa "Yoniq". Kreativni bossangiz, sahifasi ochiladi.</p>
   </section>
 
   <section class="yd-panel" id="auditoriya" role="tabpanel" hidden>
@@ -612,10 +620,10 @@ dash.calc('totals', {
 });
 
 dash.calc('entities', {
-  inputs: ['stats', 'lifetime', 'manual_ads'],
+  inputs: ['stats', 'lifetime', 'manual_ads', 'manual_campaigns'],
   title: 'Kampaniya, guruh va kreativlar',
-  description: 'Har kampaniya, guruh (ads set) va kreativ uchun tanlangan davrdagi rasxod, ko\'rsatish, klik, konversiya, CTR, CPC, CPA, lid foizi, ROI (1 lid = 420 000 so\'m) hamda butun muddatdagi birinchi va oxirgi ko\'rsatish kuni. Kabinetdan qo\'shilgan, hech qachon ko\'rsatilmagan e\'lonlar 0 natija bilan.',
-  fn: (stats, lifetime, manual_ads) => {
+  description: 'Har kampaniya, guruh (ads set) va kreativ uchun tanlangan davrdagi rasxod, ko\'rsatish, klik, konversiya, CTR, CPC, CPA, lid foizi, ROI (1 lid = 420 000 so\'m) hamda butun muddatdagi birinchi va oxirgi ko\'rsatish kuni; holat va yaratilgan sana kabinetdan. Kabinetdan qo\'shilgan, hech qachon ko\'rsatilmagan e\'lonlar 0 natija bilan.',
+  fn: (stats, lifetime, manual_ads, manual_campaigns) => {
     const LEAD_VALUE = 420000;
     const shift = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
     const yesterday = shift(new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10), -1);
@@ -656,13 +664,21 @@ dash.calc('entities', {
     const ads = all.filter(t => t.level === 'ad').sort((a, b) => a.entity_id.localeCompare(b.entity_id));
     const seen = {};
     for (const t of ads) { seen[t.adgroup_id] = (seen[t.adgroup_id] || 0) + 1; t.ad_no = seen[t.adgroup_id]; }
+    // Kabinetdagi holat (API bermaydi): to'xtatilgan kampaniya ichidagi hamma narsa ham to'xtatilgan
+    const camp = new Map(manual_campaigns.map(c => [String(c.CampaignId), c]));
     return all.map(t => {
       const cost = Math.round(t.cost * 100) / 100;
+      const c = camp.get(t.campaign_id);
+      const shown = !!t.last_date;
+      const status = !shown ? 'Ko\'rsatilmagan'
+        : c && c.Status ? c.Status
+        : t.last_date >= yesterday ? 'Yoniq' : 'O\'chiq';
       const name = t.level === 'campaign' ? t.campaign_name : t.level === 'adgroup' ? t.adgroup_name : 'Kreativ ' + t.ad_no;
       const { days, ...rest } = t;
       return { ...rest, name, title: t.title || null, text: t.text || null, thumb: t.thumb || null, cost, life_cost: Math.round(t.life_cost * 100) / 100,
         active_days: days.size,
-        status: !t.last_date ? 'Ko\'rsatilmagan' : t.last_date >= yesterday ? 'Faol' : 'To\'xtagan',
+        status,
+        created_date: t.level === 'campaign' && c && c.Created ? c.Created : null,
         ctr: t.impressions ? t.clicks / t.impressions : null,
         cpc: t.clicks ? cost / t.clicks : null,
         cpa: t.conversions ? cost / t.conversions : null,
@@ -784,7 +800,7 @@ dash.calc('insights', {
   const pct = (v) => v == null ? '—' : d3.format('.2%')(v);
   const share = (v) => v == null ? '—' : d3.format('.0%')(v);
   const FMT = { conversions: count, cpa: som, cost: som, clicks: count, cpc: som, ctr: pct, impressions: count, cr: pct, vr: pct, roi: roiFmt,
-    life_cost: som, life_conversions: count, active_days: count, first_date: (v) => v ? day(v) + ' ' + v.slice(0, 4) : '—', last_date: (v) => v ? day(v) + ' ' + v.slice(0, 4) : '—',
+    life_cost: som, life_conversions: count, active_days: count, created_date: (v) => v ? day(v) + ' ' + v.slice(0, 4) : '—', first_date: (v) => v ? day(v) + ' ' + v.slice(0, 4) : '—', last_date: (v) => v ? day(v) + ' ' + v.slice(0, 4) : '—',
     status: (v) => v || '—' };
   const GOOD_UP = { conversions: true, cpa: false, cost: null, clicks: true, cpc: false, ctr: true, impressions: true, cr: true, roi: true };
   const INS = { waste_count: count, waste_cost: som, waste_share: share, best_channel: v => v == null ? 'Konversiya bo\'lmadi' : v, best_cpa: som, channels: count, channels_clicked: count, unknown_age_share: share };
@@ -1080,7 +1096,7 @@ dash.calc('insights', {
   }
 
   // ---- Kampaniya → guruh (ads set) → kreativ ----
-  const ENT_COLS = ['status', 'first_date', 'last_date', 'cost', 'impressions', 'clicks', 'ctr', 'cpc', 'conversions', 'cr', 'cpa', 'roi'];
+  const ENT_COLS = ['status', 'created_date', 'first_date', 'last_date', 'cost', 'impressions', 'clicks', 'ctr', 'cpc', 'conversions', 'cr', 'cpa', 'roi'];
   const LEVEL_NAME = { campaign: 'Kampaniya', adgroup: 'Guruh (ads set)', ad: 'Kreativ' };
   const CHILD = { campaign: 'adgroup', adgroup: 'ad' };
   let backTo = null;
@@ -1096,8 +1112,8 @@ dash.calc('insights', {
   const AD_COLS = ['campaign_name', 'status', 'first_date', 'last_date', 'cost', 'impressions', 'clicks', 'ctr', 'conversions', 'cpa'];
   const AD_FILTERS = {
     all: () => true,
-    on: (r) => r.status === 'Faol',
-    off: (r) => r.status !== 'Faol',
+    on: (r) => r.status === 'Yoniq',
+    off: (r) => r.status === 'O\'chiq',
     lead: (r) => r.conversions > 0,
     nolead: (r) => r.cost > 0 && r.conversions === 0
   };
@@ -1105,6 +1121,19 @@ dash.calc('insights', {
   // Kampaniya ichidagi ro'yxat: tanlangan davrda ko'rsatilgan (ishlagan) yoki ko'rsatilmagan (ishlamagan)
   const CHILD_FILTERS = { all: () => true, worked: (r) => r.impressions > 0, idle: (r) => !(r.impressions > 0) };
   let childFilter = 'all';
+  // Kampaniyalar ro'yxati: asosan tanlangan davrda ishlaganlar
+  let campFilter = 'ran';
+  const CAMP_FILTERS = {
+    ran: (r) => r.impressions > 0,
+    started: (r, p) => !!r.first_date && r.first_date >= p.date_from && r.first_date <= p.date_to,
+    all: () => true
+  };
+  document.getElementById('yd-camp-filter').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-f]'); if (!b) return;
+    campFilter = b.dataset.f;
+    document.querySelectorAll('#yd-camp-filter button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    render();
+  });
   document.getElementById('yd-child-filter').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-f]'); if (!b) return;
     childFilter = b.dataset.f;
@@ -1163,7 +1192,7 @@ dash.calc('insights', {
           td.append(bar, som(r.cost));
         } else td.textContent = FMT[c](r[c]);
         if ((c === 'conversions' && r.conversions === 0) || (c === 'cost' && r.cost === 0)) td.classList.add('zero');
-        if (c === 'status' && r.status === 'Faol') td.classList.add('on');
+        if (c === 'status' && r.status === 'Yoniq') td.classList.add('on');
       }
     }
     if (!rows.length) { const td = tb.insertRow().insertCell(); td.colSpan = cols.length + 1; td.className = 'yd-note'; td.textContent = 'Ma\'lumot yo\'q.'; }
@@ -1179,7 +1208,7 @@ dash.calc('insights', {
     const chosen = all.find(r => r.id === p.sel);
     const list = document.getElementById('yd-camp-list'), detail = document.getElementById('yd-detail');
     list.hidden = !!chosen; detail.hidden = !chosen;
-    fillEntityTable('yd-camp', all.filter(r => r.level === 'campaign'));
+    fillEntityTable('yd-camp', all.filter(r => r.level === 'campaign' && CAMP_FILTERS[campFilter](r, p)));
     fillEntityTable('yd-ads', all.filter(r => r.level === 'ad' && AD_FILTERS[adFilter](r)), AD_COLS);
     // Hech narsa tanlanmagan bo'lsa ham, yashirin ko'rinish birinchi kampaniyani ko'rsatib turadi
     const sel = chosen || all.find(r => r.level === 'campaign');
@@ -1193,7 +1222,7 @@ dash.calc('insights', {
       if (sel.text) { const sm = document.createElement('small'); sm.textContent = sel.text; tEl.append(sm); }
     }
     const st = document.getElementById('yd-ent-status');
-    st.textContent = sel.status; st.classList.toggle('on', sel.status === 'Faol');
+    st.textContent = sel.status; st.classList.toggle('on', sel.status === 'Yoniq');
     document.getElementById('yd-ent-kind').textContent = LEVEL_NAME[sel.level] + ' · ID ' + sel.entity_id;
     document.querySelectorAll('.yd-ent').forEach(el => {
       el.dataset.where = 'id=' + encodeURIComponent(sel.id).replace(/%7C/g, '|');
