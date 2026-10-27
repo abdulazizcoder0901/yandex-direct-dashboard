@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Yandex Direct: Junior IT akademiya</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&display=swap">
+<style>
+/* Bitta ustun: sarlavha va davr, ko'rsatkichlar qatori, ikki grafik, kampaniyalar jadvali */
+:root {
+  --bg: #f6f6f3; --panel: #ffffff; --fg: #1c1d1f; --muted: #6a6c70; --line: #e3e3dd;
+  --grid: #ececE6; --axis: #c9c9c1; --bar: #e0a21b; --bar2: #1f7a68; --bar-muted: #cfcfc6;
+  --pop: #ffffff; --shadow: 0 6px 20px rgba(20, 20, 10, .10);
+  --font: "Golos Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --radius: 10px; --gap: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141517; --panel: #1c1d20; --fg: #ececea; --muted: #9a9ca1; --line: #2c2d31;
+    --grid: #26272b; --axis: #3c3d42; --bar: #f0b43a; --bar2: #46b39b; --bar-muted: #45464c;
+    --pop: #25262a; --shadow: 0 6px 20px rgba(0, 0, 0, .45); color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--font); }
+.wrap { max-width: 1200px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 24px; }
+.head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--gap); }
+.head > div { flex: 1 1 24rem; min-width: 0; }
+h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
+.take { margin: 6px 0 0; color: var(--muted); max-width: 70ch; }
+.take b { color: var(--fg); font-weight: 500; }
+.range { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--panel); }
+.range button { font: inherit; font-size: 13px; border: 0; background: none; color: var(--muted); padding: 6px 14px; cursor: pointer; }
+.range button[aria-pressed="true"] { background: var(--fg); color: var(--bg); font-weight: 500; }
+.range button:focus-visible, th button:focus-visible { outline: 2px solid var(--bar); outline-offset: 2px; }
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 600px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.tile { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.tile .lbl { font-size: 12px; color: var(--muted); letter-spacing: .02em; }
+.tile .val { font-size: 24px; font-weight: 500; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.tile .sub { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.card h2 { font-size: 16px; font-weight: 500; margin: 0; }
+.note { font-size: 12px; color: var(--muted); margin: 0; }
+.chart { position: relative; min-height: 220px; }
+.chart svg { display: block; }
+.empty { display: flex; align-items: center; justify-content: center; min-height: 220px; color: var(--muted); font-size: 13px; }
+.tip { position: absolute; background: var(--pop); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 6px 10px; font-size: 12px; pointer-events: none; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tip .d { color: var(--muted); }
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; white-space: normal; min-width: 12rem; }
+th { font-size: 12px; font-weight: 500; color: var(--muted); }
+th button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.cbar { display: inline-block; height: 6px; border-radius: 3px; background: var(--bar-muted); vertical-align: middle; margin-right: 6px; }
+.foot { font-size: 12px; color: var(--muted); }
+.error { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+@media (max-width: 640px) { .hide-narrow { display: none; } h1 { font-size: 22px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="head">
+    <div>
+      <h1>Yandex Direct: Junior IT akademiya</h1>
+      <p class="take" id="take">Ma'lumot yuklanmoqda…</p>
+    </div>
+    <div class="range" role="group" aria-label="Davr" id="range">
+      <button data-days="30">30 kun</button>
+      <button data-days="90">90 kun</button>
+      <button data-days="365">1 yil</button>
+    </div>
+  </header>
+
+  <div id="error" class="error" hidden></div>
+
+  <section class="tiles" aria-label="Asosiy ko'rsatkichlar">
+    <div class="tile"><span class="lbl">Konversiyalar</span><span class="val" id="k-conversions">—</span><span class="sub">Metrika maqsadlari</span></div>
+    <div class="tile"><span class="lbl">Konversiya narxi (CPA)</span><span class="val" id="k-cpa">—</span><span class="sub">Xarajat ÷ konversiyalar</span></div>
+    <div class="tile"><span class="lbl">Xarajat</span><span class="val" id="k-cost">—</span><span class="sub">QQS bilan</span></div>
+    <div class="tile"><span class="lbl">Kliklar</span><span class="val" id="k-clicks">—</span><span class="sub">O'rtacha CPC: <span id="k-cpc">—</span></span></div>
+    <div class="tile"><span class="lbl">CTR</span><span class="val" id="k-ctr">—</span><span class="sub"><span id="k-impressions">—</span> ko'rsatish</span></div>
+    <div class="tile"><span class="lbl">Hisob balansi</span><span class="val" id="k-balance">—</span><span class="sub">Oxirgi yangilanishdagi holat</span></div>
+  </section>
+
+  <section class="grid">
+    <div class="card" id="spend-chart">
+      <h2>Kunlik xarajat</h2>
+      <p class="note">Barcha kampaniyalar. Bo'sh kunlar: reklama to'xtatilgan.</p>
+      <div class="chart" id="c-spend"></div>
+    </div>
+    <div class="card" id="conv-chart">
+      <h2>Kunlik konversiyalar</h2>
+      <p class="note">Metrika maqsadlari, oxirgi bosish (LC) modeli.</p>
+      <div class="chart" id="c-conv"></div>
+    </div>
+  </section>
+
+  <section class="card" id="campaigns">
+    <h2>Kampaniyalar</h2>
+    <p class="note">Tanlangan davrda ko'rsatilgan kampaniyalar. Ustun nomini bossangiz, saralanadi.</p>
+    <div class="scroll">
+      <table id="camp">
+        <thead><tr>
+          <th><button data-k="campaign">Kampaniya</button></th>
+          <th class="hide-narrow"><button data-k="last">Oxirgi kun</button></th>
+          <th><button data-k="cost">Xarajat</button></th>
+          <th class="hide-narrow"><button data-k="impressions">Ko'rsatish</button></th>
+          <th><button data-k="clicks">Klik</button></th>
+          <th class="hide-narrow"><button data-k="ctr">CTR</button></th>
+          <th class="hide-narrow"><button data-k="cpc">O'rt. CPC</button></th>
+          <th><button data-k="conversions">Konv.</button></th>
+          <th><button data-k="cpa">CPA</button></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <p class="foot" id="foot"></p>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+(() => {
+  const MONTHS = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
+  const day = (s) => { const d = new Date(s + 'T00:00:00Z'); return d.getUTCDate() + '-' + MONTHS[d.getUTCMonth()]; };
+  const grp = (v) => d3.format(',')(v).replace(/,/g, ' ');
+  let CUR = 'so\'m';
+  const money = (v) => v == null ? '—' : grp(Math.round(v)) + ' ' + CUR;
+  const count = (v) => v == null ? '—' : grp(Math.round(v));
+  const pct = (v) => v == null ? '—' : d3.format('.2%')(v);
+  const addDays = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  let DATA = null, days = 90, sortKey = null, sortDir = -1;
+  try { days = Number(localStorage.getItem('yd-days')) || 90; } catch (e) {}
+
+  // Hisob-kitoblar
+  function totals(rows) {
+    const sum = (k) => rows.reduce((a, r) => a + (r[k] || 0), 0);
+    const cost = sum('cost'), imp = sum('impressions'), clicks = sum('clicks'), conv = sum('conversions');
+    return { cost, impressions: imp, clicks, conversions: conv,
+      ctr: imp ? clicks / imp : null, cpc: clicks ? cost / clicks : null, cpa: conv ? cost / conv : null };
+  }
+  function daily(rows, from, to) {
+    const by = new Map();
+    for (const r of rows) {
+      const t = by.get(r.date) || { date: r.date, cost: 0, clicks: 0, conversions: 0 };
+      t.cost += r.cost || 0; t.clicks += r.clicks || 0; t.conversions += r.conversions || 0;
+      by.set(r.date, t);
+    }
+    const out = [];
+    for (let d = from; d <= to; d = addDays(d, 1)) out.push(by.get(d) || { date: d, cost: 0, clicks: 0, conversions: 0 });
+    return out;
+  }
+  function campaigns(rows) {
+    const by = new Map();
+    for (const r of rows) {
+      const t = by.get(r.campaign_id) || { campaign_id: r.campaign_id, campaign: r.campaign, last: r.date, cost: 0, impressions: 0, clicks: 0, conversions: 0 };
+      if (r.date > t.last) t.last = r.date;
+      t.cost += r.cost || 0; t.impressions += r.impressions || 0; t.clicks += r.clicks || 0; t.conversions += r.conversions || 0;
+      by.set(r.campaign_id, t);
+    }
+    return [...by.values()].map(t => ({ ...t,
+      ctr: t.impressions ? t.clicks / t.impressions : null,
+      cpc: t.clicks ? t.cost / t.clicks : null,
+      cpa: t.conversions ? t.cost / t.conversions : null
+    })).sort((a, b) => a.last < b.last ? 1 : a.last > b.last ? -1 : b.cost - a.cost);
+  }
+
+  // Grafik
+  function bars(box, rows, key, yFmt, color, label) {
+    box.textContent = '';
+    if (!rows.some(r => r[key] > 0)) {
+      const e = document.createElement('div'); e.className = 'empty'; e.textContent = 'Bu davrda ma\'lumot yo\'q'; box.appendChild(e); return;
+    }
+    const W = box.clientWidth || 320, H = 220;
+    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
+    const measure = (texts) => {
+      const g = svg.append('g').attr('font-size', 12);
+      const w = d3.max(texts, s => g.append('text').text(s).node().getComputedTextLength()) || 0;
+      g.remove(); return w;
+    };
+    const y = d3.scaleLinear([0, d3.max(rows, r => r[key]) || 1], [H - 24, 8]).nice();
+    const ticks = y.ticks(4).filter(t => key === 'cost' || Number.isInteger(t));
+    const ml = Math.ceil(measure(ticks.map(yFmt))) + 10;
+    const x = d3.scaleBand(rows.map(r => r.date), [ml, W - 4]).paddingInner(0.25);
+    svg.append('g').selectAll('line').data(ticks).join('line')
+      .attr('x1', ml).attr('x2', W - 4).attr('y1', d => y(d)).attr('y2', d => y(d)).attr('stroke', css('--grid'));
+    svg.append('g').selectAll('text').data(ticks).join('text')
+      .attr('x', ml - 6).attr('y', d => y(d)).attr('dy', '0.32em').attr('text-anchor', 'end')
+      .attr('fill', css('--muted')).attr('font-size', 12).text(yFmt);
+    const lw = measure(['30-sen']) + 16;
+    const step = Math.max(1, Math.ceil(rows.length / Math.max(2, Math.floor((W - ml) / lw))));
+    svg.append('g').selectAll('text').data(rows.filter((_, i) => i % step === 0)).join('text')
+      .attr('x', d => x(d.date) + x.bandwidth() / 2).attr('y', H - 6).attr('text-anchor', 'middle')
+      .attr('fill', css('--muted')).attr('font-size', 12).text(d => day(d.date));
+    svg.append('line').attr('x1', ml).attr('x2', W - 4).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', css('--axis'));
+    const bw = Math.min(32, x.bandwidth());
+    svg.append('g').selectAll('rect').data(rows).join('rect')
+      .attr('x', d => x(d.date) + (x.bandwidth() - bw) / 2).attr('width', bw)
+      .attr('y', d => y(d[key])).attr('height', d => y(0) - y(d[key])).attr('rx', Math.min(4, bw / 2))
+      .attr('fill', color);
+    const tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true; box.appendChild(tip);
+    svg.append('g').selectAll('rect').data(rows).join('rect')
+      .attr('x', d => x(d.date)).attr('width', x.step()).attr('y', 0).attr('height', H - 24).attr('fill', 'transparent')
+      .on('mouseenter', (e, d) => {
+        tip.textContent = '';
+        const a = document.createElement('div'); a.className = 'd'; a.textContent = day(d.date);
+        const b = document.createElement('div'); b.textContent = label(d);
+        tip.append(a, b); tip.hidden = false;
+        const px = x(d.date) + x.bandwidth() / 2;
+        tip.style.left = Math.max(0, Math.min(box.clientWidth - tip.offsetWidth, px - tip.offsetWidth / 2)) + 'px';
+        tip.style.top = Math.max(0, y(d[key]) - tip.offsetHeight - 8) + 'px';
+      })
+      .on('mouseleave', () => { tip.hidden = true; });
+  }
+
+  function render() {
+    if (!DATA) return;
+    document.querySelectorAll('#range button').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.days) === days)));
+    const to = DATA.date_to, from = addDays(to, -(days - 1));
+    const rows = DATA.rows.filter(r => r.date >= from && r.date <= to);
+    const t = totals(rows), camps = campaigns(rows);
+
+    for (const [k, f] of [['conversions', count], ['cpa', money], ['cost', money], ['clicks', count], ['cpc', money], ['ctr', pct], ['impressions', count]]) {
+      document.getElementById('k-' + k).textContent = f(t[k]);
+    }
+    const bal = DATA.balance;
+    document.getElementById('k-balance').textContent = bal ? money(bal.amount) : '—';
+
+    const best = camps.filter(c => c.conversions > 0).sort((a, b) => a.cpa - b.cpa)[0];
+    const take = document.getElementById('take'); take.textContent = '';
+    const b = (s) => { const e = document.createElement('b'); e.textContent = s; return e; };
+    take.append(`${day(from)} – ${day(to)}: `, b(money(t.cost)), ' sarflandi, ', b(count(t.conversions)),
+      ' ta konversiya, bitta konversiya o\'rtacha ', b(money(t.cpa)), '.');
+    if (best) take.append(' Eng arzon konversiya: ', b(best.campaign), ' (', b(money(best.cpa)), ').');
+
+    const d = daily(rows, from, to);
+    bars(document.getElementById('c-spend'), d, 'cost', v => v >= 1000 ? grp(v / 1000) + 'K' : String(v), css('--bar'),
+      r => 'Xarajat ' + money(r.cost) + ' · ' + count(r.clicks) + ' klik');
+    bars(document.getElementById('c-conv'), d, 'conversions', v => String(v), css('--bar2'),
+      r => count(r.conversions) + ' konversiya');
+
+    let list = [...camps];
+    if (sortKey) list.sort((x, y) => {
+      const a = x[sortKey], z = y[sortKey];
+      if (a == null) return 1; if (z == null) return -1;
+      return (typeof a === 'string' ? a.localeCompare(z) : a - z) * sortDir;
+    });
+    const tb = document.querySelector('#camp tbody'); tb.textContent = '';
+    const maxCost = d3.max(list, r => r.cost) || 1;
+    for (const r of list) {
+      const tr = tb.insertRow();
+      tr.insertCell().textContent = r.campaign;
+      const last = tr.insertCell(); last.className = 'hide-narrow'; last.textContent = day(r.last);
+      const sp = tr.insertCell();
+      const bar = document.createElement('span'); bar.className = 'cbar'; bar.style.width = Math.max(2, 48 * r.cost / maxCost) + 'px';
+      sp.append(bar, money(r.cost));
+      for (const [v, cls] of [[count(r.impressions), 'hide-narrow'], [count(r.clicks), ''], [pct(r.ctr), 'hide-narrow'], [money(r.cpc), 'hide-narrow'], [count(r.conversions), ''], [money(r.cpa), '']]) {
+        const td = tr.insertCell(); td.textContent = v; if (cls) td.className = cls;
+      }
+    }
+    if (!list.length) { const td = tb.insertRow().insertCell(); td.colSpan = 9; td.className = 'note'; td.textContent = 'Bu davrda kampaniyalar ko\'rsatilmagan.'; }
+    document.querySelectorAll('#camp th').forEach(th => {
+      const k = th.querySelector('button').dataset.k;
+      th.setAttribute('aria-sort', k === sortKey ? (sortDir > 0 ? 'ascending' : 'descending') : 'none');
+    });
+
+    const upd = new Date(DATA.updated);
+    document.getElementById('foot').textContent =
+      `Hisob: ${DATA.login} · Valyuta: ${DATA.currency} · Ma'lumot yangilangan: ${upd.toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })} (Toshkent vaqti)`;
+  }
+
+  document.getElementById('range').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-days]'); if (!btn) return;
+    days = Number(btn.dataset.days);
+    try { localStorage.setItem('yd-days', String(days)); } catch (err) {}
+    render();
+  });
+  document.querySelectorAll('#camp th button').forEach(btn => btn.addEventListener('click', () => {
+    const k = btn.dataset.k;
+    if (k === sortKey) sortDir = -sortDir; else { sortKey = k; sortDir = k === 'campaign' ? 1 : -1; }
+    render();
+  }));
+  let resizeTimer;
+  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 150); });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+
+  fetch('data.json', { cache: 'no-store' })
+    .then(r => { if (!r.ok) throw new Error('data.json topilmadi (' + r.status + ')'); return r.json(); })
+    .then(json => { DATA = json; CUR = json.currency === 'UZS' ? 'so\'m' : json.currency; render(); })
+    .catch(err => {
+      const box = document.getElementById('error');
+      box.hidden = false;
+      box.textContent = 'Ma\'lumot yuklanmadi: ' + err.message + '. Avval scripts/fetch_data.py ni ishga tushiring (README\'ga qarang).';
+      document.getElementById('take').textContent = 'Ma\'lumot yo\'q.';
+    });
+})();
+</script>
+</body>
+</html>

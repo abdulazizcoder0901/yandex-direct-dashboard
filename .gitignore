@@ -1,0 +1,6 @@
+# Reklama statistikasi repoga tushmasin: u har safar skript orqali olinadi
+site/data.json
+.env
+__pycache__/
+.DS_Store
+.claude/
