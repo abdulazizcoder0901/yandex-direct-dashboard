@@ -133,6 +133,30 @@ def get_balance(token, login):
         return None
 
 
+def get_library(token, login):
+    """Kutubxonadagi video kreativlar va rasmlar. Xato bo'lsa (None, None) qaytaradi."""
+    try:
+        status, _, text = request(API_V5 + "creatives", {"method": "get", "params": {
+            "SelectionCriteria": {}, "FieldNames": ["Id", "Type", "Name"], "Page": {"Limit": 10000}}},
+            v5_headers(token, login))
+        data = json.loads(text)
+        if status != 200 or "error" in data:
+            raise RuntimeError(text[:300])
+        videos = [{"Id": str(c["Id"]), "Type": c["Type"], "Name": c["Name"]} for c in data["result"].get("Creatives", [])]
+        status, _, text = request(API_V5 + "adimages", {"method": "get", "params": {
+            "SelectionCriteria": {}, "FieldNames": ["AdImageHash", "Name", "Associated", "Type"], "Page": {"Limit": 10000}}},
+            v5_headers(token, login))
+        data = json.loads(text)
+        if status != 200 or "error" in data:
+            raise RuntimeError(text[:300])
+        images = [{"AdImageHash": i["AdImageHash"], "Name": i["Name"], "Associated": i["Associated"], "Type": i["Type"]}
+                  for i in data["result"].get("AdImages", [])]
+        return videos, images
+    except Exception as e:
+        print("Ogohlantirish: kreativlar kutubxonasi olinmadi:", e, file=sys.stderr)
+        return None, None
+
+
 def get_metrika(token, counter_id, goal_id):
     """Oxirgi bir yildagi kunlik tashriflar va forma maqsadi. Xato bo'lsa None qaytaradi."""
     query = urllib.parse.urlencode({
@@ -175,6 +199,7 @@ def main():
         out[name] = get_report(token, login, name, fields)
         print(f"{name}: {len(out[name])} qator")
     out["balance"] = get_balance(token, login)
+    out["videos"], out["images"] = get_library(token, login)
     out["metrika"] = get_metrika(token, counter_id, goal_id)
 
     OUT.parent.mkdir(parents=True, exist_ok=True)

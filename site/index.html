@@ -436,6 +436,24 @@ window.dash = (() => {
       </div>
     </div>
     <p class="yd-note">Ishlayotgan: kecha yoki bugun ko'rsatilgan. Kreativni bossangiz, uning sahifasi ochiladi.</p>
+    <div class="yd-card" id="library">
+      <div class="yd-tools">
+        <h3>Kreativlar kutubxonasi: <span data-source="library_summary" data-field="total" data-row="0" class="dash-skeleton">—</span> ta fayl</h3>
+        <div class="yd-seg" id="yd-lib-filter" role="group" aria-label="Kutubxonani ajratish">
+          <button data-f="all" aria-pressed="true">Hammasi</button>
+          <button data-f="video" aria-pressed="false">Video</button>
+          <button data-f="image" aria-pressed="false">Rasm</button>
+          <button data-f="unused" aria-pressed="false">Ishlatilmagan rasm</button>
+        </div>
+      </div>
+      <p class="yd-note">Kabinetga yuklangan barcha video va rasmlar, o'chirilgan e'lonlardagilari ham. Yandex API ularning qaysi e'longa tegishli ekanini bermaydi, shuning uchun statistikasi yuqoridagi jadvalda.</p>
+      <div class="yd-scroll tall">
+        <table class="yd-table" id="yd-lib" data-source="library" data-row-key="id">
+          <thead><tr><th data-field="name">Fayl nomi</th><th data-field="kind">Turi</th><th data-field="used">E'longa biriktirilgan</th><th data-field="format" class="yd-hide-narrow">Format</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
   </section>
 
   <section class="yd-panel" id="auditoriya" role="tabpanel" hidden>
@@ -510,6 +528,26 @@ dash.loader('balance', {
       columns: ['login', 'amount', 'available', 'currency'],
       rows: a.Accounts.map(x => ({ login: x.Login, amount: Number(x.Amount), available: Number(x.AmountAvailableForTransfer), currency: x.Currency }))
     };
+  }
+});
+
+dash.loader('videos', {
+  description: "Kutubxonadagi video kreativlar ro'yxati: ID, turi, nomi.",
+  fn: ({ answer }) => {
+    const a = typeof answer === 'string' ? JSON.parse(answer) : answer;
+    if (a.error) throw new Error(a.error.error_string || JSON.stringify(a.error));
+    if (!Array.isArray(a.Creatives)) throw new Error('Kutilmagan javob: ' + Object.keys(a).join(', '));
+    return { columns: ['Id', 'Type', 'Name'], rows: a.Creatives.map(c => ({ Id: String(c.Id), Type: c.Type, Name: c.Name })) };
+  }
+});
+
+dash.loader('images', {
+  description: "Kutubxonadagi rasmlar ro'yxati: xesh, nomi, e'longa biriktirilganmi, turi.",
+  fn: ({ answer }) => {
+    const a = typeof answer === 'string' ? JSON.parse(answer) : answer;
+    if (a.error) throw new Error(a.error.error_string || JSON.stringify(a.error));
+    if (!Array.isArray(a.AdImages)) throw new Error('Kutilmagan javob: ' + Object.keys(a).join(', '));
+    return { columns: ['AdImageHash', 'Name', 'Associated', 'Type'], rows: a.AdImages.map(i => ({ AdImageHash: i.AdImageHash, Name: i.Name, Associated: i.Associated, Type: i.Type })) };
   }
 });
 
@@ -656,6 +694,29 @@ dash.calc('breakdown', {
     }
     return out;
   }
+});
+
+dash.calc('library', {
+  inputs: ['videos', 'images'],
+  title: 'Kreativlar kutubxonasi',
+  description: 'Video va rasmlar bitta ro\'yxatda: turi, e\'longa biriktirilganmi (faqat rasmlar uchun ma\'lum), formati.',
+  fn: (videos, images) => [
+    ...videos.map(v => ({ id: 'video|' + v.Id, kind: 'Video', name: v.Name, used: 'Noma\'lum', format: 'Video' })),
+    ...images.map(i => ({ id: 'image|' + i.AdImageHash, kind: 'Rasm', name: i.Name, used: i.Associated === 'YES' ? 'Ha' : 'Yo\'q',
+      format: i.Type === 'WIDE' ? 'Keng (16:9)' : i.Type === 'REGULAR' ? 'Oddiy' : i.Type }))
+  ]
+});
+
+dash.calc('library_summary', {
+  inputs: ['library'],
+  title: 'Kutubxona jami',
+  description: 'Kutubxonadagi fayllar soni: jami, video, rasm va hech bir e\'longa biriktirilmagan rasmlar.',
+  fn: (library) => [{
+    total: library.length,
+    videos: library.filter(r => r.kind === 'Video').length,
+    images: library.filter(r => r.kind === 'Rasm').length,
+    unused_images: library.filter(r => r.kind === 'Rasm' && r.used === 'Yo\'q').length
+  }]
 });
 
 dash.calc('insights', {
@@ -990,6 +1051,7 @@ dash.calc('insights', {
     for (const tid of Object.keys(TABLES)) fillTable(tid, all);
 
     renderEntities(p);
+    renderLibrary();
   }
 
   // ---- Kampaniya → guruh (ads set) → kreativ ----
@@ -1120,8 +1182,40 @@ dash.calc('insights', {
     } else if (s.status === 'error') msg(box, 'Yuklanmadi');
   }
 
+  // ---- Kreativlar kutubxonasi ----
+  let libFilter = 'all';
+  const LIB_FILTERS = { all: () => true, video: (r) => r.kind === 'Video', image: (r) => r.kind === 'Rasm', unused: (r) => r.kind === 'Rasm' && r.used === 'Yo\'q' };
+  document.getElementById('yd-lib-filter').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-f]'); if (!b) return;
+    libFilter = b.dataset.f;
+    document.querySelectorAll('#yd-lib-filter button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    render();
+  });
+  function renderLibrary() {
+    const l = dash.data('library'), sum = dash.data('library_summary');
+    document.querySelectorAll('[data-source="library_summary"]').forEach(el => {
+      setState(el, sum.status);
+      el.textContent = sum.status === 'ok' && sum.data[0] ? count(sum.data[0][el.dataset.field]) : '—';
+    });
+    const tb = document.querySelector('#yd-lib tbody'); tb.textContent = '';
+    if (l.status !== 'ok') {
+      if (l.status === 'error') { const td = tb.insertRow().insertCell(); td.colSpan = 4; td.className = 'yd-note'; td.textContent = 'Yuklanmadi'; }
+      return;
+    }
+    const rows = l.data.filter(LIB_FILTERS[libFilter]).sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name));
+    for (const r of rows) {
+      const tr = tb.insertRow(); tr.dataset.key = r.id;
+      for (const c of ['name', 'kind', 'used', 'format']) {
+        const td = tr.insertCell(); td.textContent = r[c];
+        if (c === 'format') td.className = 'yd-hide-narrow';
+        if (c === 'used' && r.used === 'Yo\'q') td.classList.add('zero');
+      }
+    }
+    if (!rows.length) { const td = tb.insertRow().insertCell(); td.colSpan = 4; td.className = 'yd-note'; td.textContent = 'Ma\'lumot yo\'q.'; }
+  }
+
   // ---- Har 10 daqiqada yangilash ----
-  const QUERIES = ['stats', 'stats_cmp', 'lifetime', 'placements', 'audience', 'regions', 'metrika', 'balance'];
+  const QUERIES = ['stats', 'stats_cmp', 'lifetime', 'placements', 'audience', 'regions', 'metrika', 'balance', 'videos', 'images'];
   const EVERY = 10 * 60 * 1000;
   const hhmm = (d) => d.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Tashkent' });
   let nextAt = Date.now() + EVERY;
