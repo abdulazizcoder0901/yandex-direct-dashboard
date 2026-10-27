@@ -77,7 +77,6 @@ def get_report(token, login, name, fields):
         "DateRangeType": "ALL_TIME",
         "Format": "TSV",
         "IncludeVAT": "NO",  # kabinetdagi "Расход" kabi, QQS'siz
-        "AttributionModels": ["LC"],
     }}
     headers = v5_headers(token, login)
     headers.update({

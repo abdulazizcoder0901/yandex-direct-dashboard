@@ -56,7 +56,7 @@ So'ng brauzerda http://localhost:8000 ni oching.
 ## Hisoblash qoidalari
 
 - Rasxod QQS'siz, hisob valyutasida (UZS), tiyingacha: Direct kabinetidagi "Расход" bilan bir xil.
-- Konversiyalar Direct hisoblagan, kampaniyada tanlangan maqsadlar bo'yicha, oxirgi bosish (LC) atribusiya modelida.
+- Konversiyalar Direct hisoblagan, kampaniyada tanlangan maqsadlar bo'yicha, Direct'ning standart atribusiya modelida (API maqsad ko'rsatilmasa boshqa modelni qabul qilmaydi).
 - CPA = rasxod ÷ konversiyalar, CTR = kliklar ÷ ko'rsatishlar, CPC = rasxod ÷ kliklar, lid foizi = konversiyalar ÷ kliklar.
 - ROI = (konversiyalar × 420 000 so'm − rasxod) ÷ rasxod. 420 000 so'm Metrika'dagi "Forma yuborildi" maqsadining qiymati; Direct o'zi daromad yozmaydi.
 - Kampaniyalar tabida kampaniyani bossangiz, guruhlari (ads set), guruhni bossangiz, kreativlari ochiladi. Kreativlar "Kreativ N" deb yoziladi; to'liq sarlavha sichqoncha ustida (`data/manual_ads.json` dan).
