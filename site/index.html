@@ -9,301 +9,665 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&display=swap">
 <style>
-/* Bitta ustun: sarlavha va davr, ko'rsatkichlar qatori, ikki grafik, kampaniyalar jadvali */
+/* Claude dashboard'idagi dizayn tokenlari: shu sahifa ham Claude'dagi bilan bir xil ko'rinadi */
 :root {
-  --bg: #f6f6f3; --panel: #ffffff; --fg: #1c1d1f; --muted: #6a6c70; --line: #e3e3dd;
-  --grid: #ececE6; --axis: #c9c9c1; --bar: #e0a21b; --bar2: #1f7a68; --bar-muted: #cfcfc6;
-  --pop: #ffffff; --shadow: 0 6px 20px rgba(20, 20, 10, .10);
-  --font: "Golos Text", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --radius: 10px; --gap: 16px;
+  --color-bg: #f6f6f3; --color-panel: #ffffff; --color-fg: #1c1d1f; --color-fg-muted: #6a6c70; --color-border-line: #e3e3dd;
+  --color-ok: #1d7a4c; --color-warn: #a86a00; --color-bad: #c0392b;
+  --series-1: #d6960f; --series-2: #1f7a68;
+  --cds-chart-grid: #ececE6; --cds-chart-axis: #c9c9c1; --cds-chart-muted: #cfcfc6; --cds-chart-reference: #9a9a92;
+  --cds-surface-popover: #ffffff; --cds-border: #e3e3dd; --cds-shadow-popover: 0 6px 20px rgba(20, 20, 10, .10); --cds-text-secondary: #6a6c70;
+  --font-anthropic-sans: "Golos Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-anthropic-serif: "Golos Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --cds-font-size-caption: 12px; --cds-font-size-body: 14px; --cds-font-size-heading: 16px; --cds-font-size-title: 26px; --cds-font-weight-medium: 500;
+  --cds-gap-xs: 4px; --cds-gap-sm: 8px; --cds-gap-md: 12px; --cds-gap-lg: 24px;
+  --cds-pad-xs: 4px; --cds-pad-sm: 8px; --cds-pad-md: 12px; --cds-pad-lg: 18px;
+  --cds-radius: 10px; --cds-dur-slow: 300ms;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #141517; --panel: #1c1d20; --fg: #ececea; --muted: #9a9ca1; --line: #2c2d31;
-    --grid: #26272b; --axis: #3c3d42; --bar: #f0b43a; --bar2: #46b39b; --bar-muted: #45464c;
-    --pop: #25262a; --shadow: 0 6px 20px rgba(0, 0, 0, .45); color-scheme: dark;
+    --color-bg: #141517; --color-panel: #1c1d20; --color-fg: #ececea; --color-fg-muted: #9a9ca1; --color-border-line: #2c2d31;
+    --color-ok: #4cc38a; --color-warn: #e0a83a; --color-bad: #ef6b5d;
+    --series-1: #f0b43a; --series-2: #46b39b;
+    --cds-chart-grid: #26272b; --cds-chart-axis: #3c3d42; --cds-chart-muted: #45464c; --cds-chart-reference: #75767c;
+    --cds-surface-popover: #25262a; --cds-border: #2c2d31; --cds-shadow-popover: 0 6px 20px rgba(0, 0, 0, .45); --cds-text-secondary: #9a9ca1;
+    color-scheme: dark;
   }
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--font); }
-.wrap { max-width: 1200px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; gap: 24px; }
-.head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--gap); }
-.head > div { flex: 1 1 24rem; min-width: 0; }
-h1 { font-size: 26px; font-weight: 600; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
-.take { margin: 6px 0 0; color: var(--muted); max-width: 70ch; }
-.take b { color: var(--fg); font-weight: 500; }
-.range { display: inline-flex; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--panel); }
-.range button { font: inherit; font-size: 13px; border: 0; background: none; color: var(--muted); padding: 6px 14px; cursor: pointer; }
-.range button[aria-pressed="true"] { background: var(--fg); color: var(--bg); font-weight: 500; }
-.range button:focus-visible, th button:focus-visible { outline: 2px solid var(--bar); outline-offset: 2px; }
-.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-@media (min-width: 600px) { .tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 1100px) { .tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
-.tile { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.tile .lbl { font-size: 12px; color: var(--muted); letter-spacing: .02em; }
-.tile .val { font-size: 24px; font-weight: 500; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-.tile .sub { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 12px; }
-.card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-.card h2 { font-size: 16px; font-weight: 500; margin: 0; }
-.note { font-size: 12px; color: var(--muted); margin: 0; }
-.chart { position: relative; min-height: 220px; }
-.chart svg { display: block; }
-.empty { display: flex; align-items: center; justify-content: center; min-height: 220px; color: var(--muted); font-size: 13px; }
-.tip { position: absolute; background: var(--pop); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); padding: 6px 10px; font-size: 12px; pointer-events: none; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.tip .d { color: var(--muted); }
-.scroll { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
-th:first-child, td:first-child { text-align: left; white-space: normal; min-width: 12rem; }
-th { font-size: 12px; font-weight: 500; color: var(--muted); }
-th button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
-.cbar { display: inline-block; height: 6px; border-radius: 3px; background: var(--bar-muted); vertical-align: middle; margin-right: 6px; }
-.foot { font-size: 12px; color: var(--muted); }
-.error { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
-@media (max-width: 640px) { .hide-narrow { display: none; } h1 { font-size: 22px; } }
+body { margin: 0; background: var(--color-bg); color: var(--color-fg); font: 14px/1.5 var(--font-anthropic-sans); }
+#dash-root { max-width: 1200px; margin: 0 auto; padding-block: 28px 48px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.dash-skeleton { color: transparent !important; background: var(--cds-chart-grid); border-radius: 4px; }
+.yd-banner { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: 14px 18px; margin-bottom: 20px; color: var(--color-bad); }
+.yd-foot { margin-top: 24px; font-size: 12px; color: var(--color-fg-muted); }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+// Claude dashboard API'sining kichik o'rnini bosuvchisi: ma'lumot data.json'dan olinadi.
+window.dash = (() => {
+  const calcs = [], listeners = [], cache = {};
+  let raw = null, status = 'loading', message = '';
+  const params = { days: 90 };
+  try { const d = Number(localStorage.getItem('yd-days')); if ([30, 90, 365].includes(d)) params.days = d; } catch (e) {}
+  const fire = () => listeners.forEach(fn => { try { fn(); } catch (e) { console.error(e); } });
+  const value = (id) => id in cache ? cache[id] : raw ? raw[id] : undefined;
+  const compute = () => {
+    for (const c of calcs) {
+      try { cache[c.id] = c.fn(...c.inputs.map(i => value(i) || [])); }
+      catch (e) { console.error('calc ' + c.id, e); cache[c.id] = undefined; }
+    }
+  };
+  let resizeTimer;
+  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(fire, 150); });
+  return {
+    colors: ['var(--series-1)', 'var(--series-2)'],
+    loader() {},
+    calc(id, spec) { calcs.push({ id, inputs: spec.inputs, fn: spec.fn }); },
+    data(id) {
+      if (status !== 'ok') return { status, data: [], message };
+      const v = value(id);
+      return v == null ? { status: 'error', data: [], message: id + ' yo\'q' } : { status: 'ok', data: v };
+    },
+    params: () => ({ ...params }),
+    setParams(p) { Object.assign(params, p); try { localStorage.setItem('yd-days', String(params.days)); } catch (e) {} fire(); },
+    resetParams() {},
+    setLink() {},
+    onData(fn) { listeners.push(fn); try { fn(); } catch (e) { console.error(e); } },
+    load(url) {
+      return fetch(url, { cache: 'no-store' })
+        .then(r => { if (!r.ok) throw new Error('data.json topilmadi (' + r.status + ')'); return r.json(); })
+        .then(json => { raw = json; compute(); status = 'ok'; fire(); return json; })
+        .catch(err => { status = 'error'; message = err.message; fire(); throw err; });
+    }
+  };
+})();
+</script>
 </head>
 <body>
-<div class="wrap">
-  <header class="head">
+<div id="dash-root">
+<div class="yd-banner" id="yd-banner" hidden></div>
+<style>
+.yd { font-family: var(--font-anthropic-sans); display: flex; flex-direction: column; gap: var(--cds-gap-lg); }
+.yd-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--cds-gap-md); }
+.yd-head > div { min-width: 0; flex: 1 1 24rem; }
+.yd-head h1 { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); margin: 0; text-wrap: balance; }
+.yd-take { margin: var(--cds-gap-xs) 0 0; color: var(--color-fg-muted); font-size: var(--cds-font-size-body); max-width: 75ch; }
+.yd-take b { color: var(--color-fg); font-weight: 500; }
+.yd-range { display: inline-flex; border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); overflow: hidden; }
+.yd-range button { all: unset; cursor: pointer; padding: var(--cds-pad-xs) var(--cds-pad-md); font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.yd-range button[aria-pressed="true"] { background: var(--color-panel); color: var(--color-fg); font-weight: var(--cds-font-weight-medium); }
+.yd-range button:focus-visible, .yd-table th button:focus-visible { outline: 2px solid var(--color-fg); outline-offset: -2px; }
+.yd-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--cds-gap-md); }
+@media (min-width: 600px) { .yd-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1100px) { .yd-tiles { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.yd-tiles.two { grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr)); }
+.yd-tile { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-md) var(--cds-pad-lg); display: flex; flex-direction: column; gap: var(--cds-gap-xs); min-width: 0; }
+.yd-tile .lbl { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); }
+.yd-tile .val { font-family: var(--font-anthropic-serif); font-weight: 400; font-size: var(--cds-font-size-title); font-variant-numeric: tabular-nums; min-height: 1.3em; overflow-wrap: anywhere; }
+.yd-tile .val.small { font-family: var(--font-anthropic-sans); font-size: var(--cds-font-size-heading); }
+.yd-tile .sub { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
+.yd-chg.good { color: var(--color-ok); }
+.yd-chg.bad { color: var(--color-bad); }
+.yd-warn { color: var(--color-bad); }
+.yd-section { display: flex; flex-direction: column; gap: var(--cds-gap-md); }
+.yd-section > h2 { font-size: var(--cds-font-size-heading); font-weight: var(--cds-font-weight-medium); margin: 0; }
+.yd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--cds-gap-md); }
+.yd-grid.three { grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); }
+.yd-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); padding: var(--cds-pad-lg); min-width: 0; display: flex; flex-direction: column; gap: var(--cds-gap-sm); }
+.yd-card h3 { font-size: var(--cds-font-size-body); font-weight: var(--cds-font-weight-medium); margin: 0; }
+.yd-note { font-size: var(--cds-font-size-caption); color: var(--color-fg-muted); margin: 0; }
+.yd-chart { position: relative; min-height: 220px; }
+.yd-chart svg { display: block; }
+.yd-tip { position: absolute; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: var(--cds-radius); box-shadow: var(--cds-shadow-popover); padding: var(--cds-pad-xs) var(--cds-pad-sm); font-size: var(--cds-font-size-caption); pointer-events: none; white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 2; }
+.yd-tip .d { color: var(--cds-text-secondary); }
+.yd-tools { display: flex; flex-wrap: wrap; gap: var(--cds-gap-sm); align-items: center; justify-content: space-between; }
+.yd-search { font: inherit; font-size: var(--cds-font-size-caption); padding: var(--cds-pad-xs) var(--cds-pad-sm); border: 1px solid var(--color-border-line); border-radius: var(--cds-radius); background: var(--color-bg); color: var(--color-fg); min-width: 0; flex: 0 1 16rem; }
+.yd-scroll { overflow: auto; }
+.yd-scroll.tall { max-height: 30rem; }
+.yd-table { width: 100%; border-collapse: collapse; font-size: var(--cds-font-size-body); font-variant-numeric: tabular-nums; }
+.yd-table th, .yd-table td { padding: var(--cds-pad-xs) var(--cds-pad-sm); text-align: right; border-bottom: 1px solid var(--color-border-line); white-space: nowrap; }
+.yd-table th:first-child, .yd-table td:first-child { text-align: left; white-space: normal; min-width: 10rem; overflow-wrap: anywhere; }
+.yd-table th { font-size: var(--cds-font-size-caption); font-weight: var(--cds-font-weight-medium); color: var(--color-fg-muted); position: sticky; top: 0; background: var(--color-panel); z-index: 1; }
+.yd-table th button { all: unset; cursor: pointer; }
+.yd-table td.zero { color: var(--color-fg-muted); }
+.yd-bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--cds-chart-muted); vertical-align: middle; margin-right: var(--cds-gap-xs); }
+.yd-err { display: flex; align-items: center; justify-content: center; gap: var(--cds-gap-xs); min-height: inherit; color: var(--color-fg-muted); font-size: var(--cds-font-size-caption); }
+.yd-err::before { content: ""; width: .375rem; height: .375rem; border-radius: 50%; background: var(--color-bad); }
+.yd-err.quiet::before { display: none; }
+[data-dash-source-state=empty] { color: transparent; }
+[data-dash-source-state=refreshing] { opacity: .5; transition: opacity var(--cds-dur-slow); }
+@media (max-width: 640px) { .yd-hide-narrow { display: none; } }
+</style>
+
+<div class="yd">
+  <header class="yd-head" id="summary">
     <div>
       <h1>Yandex Direct: Junior IT akademiya</h1>
-      <p class="take" id="take">Ma'lumot yuklanmoqda…</p>
+      <p class="yd-take">
+        <span class="yd-period">Oxirgi 90 kun</span>:
+        <b data-source="totals" data-field="current" data-where="period=90&amp;metric=cost" class="dash-skeleton">—</b> sarflandi,
+        <b data-source="totals" data-field="current" data-where="period=90&amp;metric=conversions" class="dash-skeleton">—</b> ta konversiya,
+        bitta konversiya o'rtacha <b data-source="totals" data-field="current" data-where="period=90&amp;metric=cpa" class="dash-skeleton">—</b>.
+        <b data-source="insights" data-field="waste_count" data-where="period=90" class="dash-skeleton">—</b> ta kanalga
+        <b data-source="insights" data-field="waste_cost" data-where="period=90" class="dash-skeleton">—</b> sarflandi, lekin ulardan birorta ham konversiya bo'lmadi.
+      </p>
     </div>
-    <div class="range" role="group" aria-label="Davr" id="range">
+    <div class="yd-range" role="group" aria-label="Davr" id="yd-range">
       <button data-days="30">30 kun</button>
       <button data-days="90">90 kun</button>
       <button data-days="365">1 yil</button>
     </div>
   </header>
 
-  <div id="error" class="error" hidden></div>
-
-  <section class="tiles" aria-label="Asosiy ko'rsatkichlar">
-    <div class="tile"><span class="lbl">Konversiyalar</span><span class="val" id="k-conversions">—</span><span class="sub">Metrika maqsadlari</span></div>
-    <div class="tile"><span class="lbl">Konversiya narxi (CPA)</span><span class="val" id="k-cpa">—</span><span class="sub">Xarajat ÷ konversiyalar</span></div>
-    <div class="tile"><span class="lbl">Xarajat</span><span class="val" id="k-cost">—</span><span class="sub">QQS bilan</span></div>
-    <div class="tile"><span class="lbl">Kliklar</span><span class="val" id="k-clicks">—</span><span class="sub">O'rtacha CPC: <span id="k-cpc">—</span></span></div>
-    <div class="tile"><span class="lbl">CTR</span><span class="val" id="k-ctr">—</span><span class="sub"><span id="k-impressions">—</span> ko'rsatish</span></div>
-    <div class="tile"><span class="lbl">Hisob balansi</span><span class="val" id="k-balance">—</span><span class="sub">Oxirgi yangilanishdagi holat</span></div>
+  <section class="yd-tiles" id="kpis" aria-label="Asosiy ko'rsatkichlar">
+    <div class="yd-tile"><span class="lbl">Konversiyalar</span>
+      <span class="val dash-skeleton" data-source="totals" data-field="current" data-where="period=90&amp;metric=conversions">—</span>
+      <span class="sub yd-chg dash-skeleton" data-source="totals" data-field="change" data-where="period=90&amp;metric=conversions">—</span></div>
+    <div class="yd-tile"><span class="lbl">Konversiya narxi (CPA)</span>
+      <span class="val dash-skeleton" data-source="totals" data-field="current" data-where="period=90&amp;metric=cpa">—</span>
+      <span class="sub yd-chg dash-skeleton" data-source="totals" data-field="change" data-where="period=90&amp;metric=cpa">—</span></div>
+    <div class="yd-tile"><span class="lbl">Xarajat (QQS bilan)</span>
+      <span class="val dash-skeleton" data-source="totals" data-field="current" data-where="period=90&amp;metric=cost">—</span>
+      <span class="sub yd-chg dash-skeleton" data-source="totals" data-field="change" data-where="period=90&amp;metric=cost">—</span></div>
+    <div class="yd-tile"><span class="lbl">Kliklar</span>
+      <span class="val dash-skeleton" data-source="totals" data-field="current" data-where="period=90&amp;metric=clicks">—</span>
+      <span class="sub yd-chg dash-skeleton" data-source="totals" data-field="change" data-where="period=90&amp;metric=clicks">—</span></div>
+    <div class="yd-tile"><span class="lbl">O'rtacha klik narxi (CPC)</span>
+      <span class="val dash-skeleton" data-source="totals" data-field="current" data-where="period=90&amp;metric=cpc">—</span>
+      <span class="sub yd-chg dash-skeleton" data-source="totals" data-field="change" data-where="period=90&amp;metric=cpc">—</span></div>
+    <div class="yd-tile"><span class="lbl">Hisob balansi</span>
+      <span class="val dash-skeleton" data-source="balance" data-field="amount" data-row="0">—</span>
+      <span class="sub">Hozirgi holat, davrga bog'liq emas</span></div>
   </section>
 
-  <section class="grid">
-    <div class="card" id="spend-chart">
-      <h2>Kunlik xarajat</h2>
-      <p class="note">Barcha kampaniyalar. Bo'sh kunlar: reklama to'xtatilgan.</p>
-      <div class="chart" id="c-spend"></div>
+  <section class="yd-grid">
+    <div class="yd-card" id="spend-chart">
+      <h3>Kunlik xarajat</h3>
+      <p class="yd-note">Barcha kampaniyalar, so'm. Bo'sh kunlar: reklama to'xtatilgan.</p>
+      <div class="yd-chart dash-skeleton" data-source="daily" id="yd-spend"></div>
     </div>
-    <div class="card" id="conv-chart">
-      <h2>Kunlik konversiyalar</h2>
-      <p class="note">Metrika maqsadlari, oxirgi bosish (LC) modeli.</p>
-      <div class="chart" id="c-conv"></div>
+    <div class="yd-card" id="conv-chart">
+      <h3>Kunlik konversiyalar</h3>
+      <p class="yd-note">Direct hisoblagan konversiyalar, oxirgi bosish (LC) modeli.</p>
+      <div class="yd-chart dash-skeleton" data-source="daily" id="yd-conv"></div>
     </div>
   </section>
 
-  <section class="card" id="campaigns">
+  <section class="yd-section" id="channels">
+    <h2>Telegram kanallari</h2>
+    <div class="yd-tiles two">
+      <div class="yd-tile"><span class="lbl">Konversiyasiz kanallarga ketgan pul</span>
+        <span class="val dash-skeleton" data-source="insights" data-field="waste_cost" data-where="period=90">—</span>
+        <span class="sub"><span data-source="insights" data-field="waste_share" data-where="period=90" class="dash-skeleton">—</span> xarajatning, <span data-source="insights" data-field="waste_count" data-where="period=90" class="dash-skeleton">—</span> ta kanal</span></div>
+      <div class="yd-tile"><span class="lbl">Eng arzon konversiya bergan kanal</span>
+        <span class="val small dash-skeleton" data-source="insights" data-field="best_channel" data-where="period=90">—</span>
+        <span class="sub">CPA <span data-source="insights" data-field="best_cpa" data-where="period=90" class="dash-skeleton">—</span></span></div>
+      <div class="yd-tile"><span class="lbl">Reklama chiqqan kanallar</span>
+        <span class="val dash-skeleton" data-source="insights" data-field="channels" data-where="period=90">—</span>
+        <span class="sub">Shundan klik olganlar: <span data-source="insights" data-field="channels_clicked" data-where="period=90" class="dash-skeleton">—</span></span></div>
+    </div>
+    <div class="yd-card" id="placements">
+      <div class="yd-tools">
+        <p class="yd-note">Har bir kanal bo'yicha tanlangan davrdagi natija. Ustun nomini bossangiz, saralanadi.</p>
+        <input class="yd-search" id="yd-place-q" type="search" placeholder="Kanal nomi bo'yicha qidirish" aria-label="Kanal qidirish">
+      </div>
+      <div class="yd-scroll tall">
+        <table class="yd-table" id="yd-place" data-source="breakdown" data-row-key="id">
+          <thead><tr>
+            <th data-field="name"><button data-k="name">Kanal</button></th>
+            <th data-field="cost"><button data-k="cost">Xarajat</button></th>
+            <th data-field="impressions" class="yd-hide-narrow"><button data-k="impressions">Ko'rsatish</button></th>
+            <th data-field="clicks"><button data-k="clicks">Klik</button></th>
+            <th data-field="ctr" class="yd-hide-narrow"><button data-k="ctr">CTR</button></th>
+            <th data-field="cpc" class="yd-hide-narrow"><button data-k="cpc">O'rt. CPC</button></th>
+            <th data-field="conversions"><button data-k="conversions">Konv.</button></th>
+            <th data-field="cpa"><button data-k="cpa">CPA</button></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="yd-section" id="campaigns">
     <h2>Kampaniyalar</h2>
-    <p class="note">Tanlangan davrda ko'rsatilgan kampaniyalar. Ustun nomini bossangiz, saralanadi.</p>
-    <div class="scroll">
-      <table id="camp">
-        <thead><tr>
-          <th><button data-k="campaign">Kampaniya</button></th>
-          <th class="hide-narrow"><button data-k="last">Oxirgi kun</button></th>
-          <th><button data-k="cost">Xarajat</button></th>
-          <th class="hide-narrow"><button data-k="impressions">Ko'rsatish</button></th>
-          <th><button data-k="clicks">Klik</button></th>
-          <th class="hide-narrow"><button data-k="ctr">CTR</button></th>
-          <th class="hide-narrow"><button data-k="cpc">O'rt. CPC</button></th>
-          <th><button data-k="conversions">Konv.</button></th>
-          <th><button data-k="cpa">CPA</button></th>
-        </tr></thead>
-        <tbody></tbody>
-      </table>
+    <div class="yd-card">
+      <div class="yd-scroll">
+        <table class="yd-table" id="yd-camp" data-source="breakdown" data-row-key="id">
+          <thead><tr>
+            <th data-field="name"><button data-k="name">Kampaniya</button></th>
+            <th data-field="last" class="yd-hide-narrow"><button data-k="last">Oxirgi kun</button></th>
+            <th data-field="cost"><button data-k="cost">Xarajat</button></th>
+            <th data-field="impressions" class="yd-hide-narrow"><button data-k="impressions">Ko'rsatish</button></th>
+            <th data-field="clicks"><button data-k="clicks">Klik</button></th>
+            <th data-field="ctr" class="yd-hide-narrow"><button data-k="ctr">CTR</button></th>
+            <th data-field="cpc" class="yd-hide-narrow"><button data-k="cpc">O'rt. CPC</button></th>
+            <th data-field="conversions"><button data-k="conversions">Konv.</button></th>
+            <th data-field="cpa"><button data-k="cpa">CPA</button></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
-  <p class="foot" id="foot"></p>
+  <section class="yd-section" id="audience">
+    <h2>Auditoriya</h2>
+    <p class="yd-note">Telegram reklamasi ko'pchilik ko'rsatishlar uchun yosh va jinsni bermaydi: tanlangan davrda ko'rsatishlarning <span data-source="insights" data-field="unknown_age_share" data-where="period=90" class="dash-skeleton">—</span> qismida yosh noma'lum. Shuning uchun bu yerda kliklar va konversiyalarga qarang. Barcha ko'rsatishlar Direct'da "kompyuter" qurilmasi sifatida yoziladi, shu sababli qurilma kesimi berilmagan.</p>
+    <div class="yd-grid three">
+      <div class="yd-card" id="ages"><h3>Yosh</h3>
+        <div class="yd-scroll"><table class="yd-table yd-mini" id="yd-age" data-source="breakdown" data-row-key="id">
+          <thead><tr><th data-field="name"><button data-k="name">Yosh</button></th><th data-field="clicks"><button data-k="clicks">Klik</button></th><th data-field="cost"><button data-k="cost">Xarajat</button></th><th data-field="conversions"><button data-k="conversions">Konv.</button></th><th data-field="cpa"><button data-k="cpa">CPA</button></th></tr></thead>
+          <tbody></tbody></table></div></div>
+      <div class="yd-card" id="genders"><h3>Jins</h3>
+        <div class="yd-scroll"><table class="yd-table yd-mini" id="yd-gender" data-source="breakdown" data-row-key="id">
+          <thead><tr><th data-field="name"><button data-k="name">Jins</button></th><th data-field="clicks"><button data-k="clicks">Klik</button></th><th data-field="cost"><button data-k="cost">Xarajat</button></th><th data-field="conversions"><button data-k="conversions">Konv.</button></th><th data-field="cpa"><button data-k="cpa">CPA</button></th></tr></thead>
+          <tbody></tbody></table></div></div>
+      <div class="yd-card" id="regions"><h3>Hudud</h3>
+        <div class="yd-scroll"><table class="yd-table yd-mini" id="yd-region" data-source="breakdown" data-row-key="id">
+          <thead><tr><th data-field="name"><button data-k="name">Hudud</button></th><th data-field="clicks"><button data-k="clicks">Klik</button></th><th data-field="cost"><button data-k="cost">Xarajat</button></th><th data-field="conversions"><button data-k="conversions">Konv.</button></th><th data-field="cpa"><button data-k="cpa">CPA</button></th></tr></thead>
+          <tbody></tbody></table></div></div>
+    </div>
+  </section>
+
+  <section class="yd-section" id="metrika">
+    <h2>Sayt va Metrika maqsadlari</h2>
+    <div class="yd-tiles two">
+      <div class="yd-tile"><span class="lbl">Saytga tashriflar (Metrika, oxirgi 30 kun)</span>
+        <span class="val dash-skeleton" data-source="metrika" data-field="visits" data-row="0">—</span>
+        <span class="sub">Hisoblagich "Telegram ads", junior-it.uz/forma-junior</span></div>
+      <div class="yd-tile"><span class="lbl">"Forma yuborildi" maqsadi (oxirgi 30 kun)</span>
+        <span class="val dash-skeleton" data-source="metrika" data-field="form_submits" data-row="0">—</span>
+        <span class="sub">Maqsad qiymati Metrika'da 420 000 so'm deb belgilangan</span></div>
+    </div>
+    <p class="yd-note" id="yd-metrika-note"></p>
+  </section>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<script>
+// Direct hisobotlari tab bilan ajratilgan matn bo'lib keladi: hammasi uchun bir xil o'qish usuli.
+const ydParseReport = ({ answer, args }) => {
+  const text = typeof answer === 'string' ? answer
+    : Array.isArray(answer && answer.content) ? answer.content.map(c => c.text || '').join('\n')
+    : answer && typeof answer.text === 'string' ? answer.text : null;
+  if (text == null) throw new Error('Kutilmagan javob: ' + Object.keys(answer || {}).join(', '));
+  const names = args.fieldNames;
+  const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+  if (lines.length && lines[0].split('\t')[0] === names[0]) lines.shift();
+  if (lines.some(l => l.split('\t').length !== names.length)) throw new Error(text.slice(0, 400));
+  const nums = new Set(['Impressions', 'Clicks', 'Cost', 'Conversions']);
+  const rows = lines.map(l => Object.fromEntries(d3.zip(names, l.split('\t')).map(([k, v]) => {
+    if (!nums.has(k)) return [k, v];
+    const n = Number(v);
+    return [k, v === '' || v === '--' || Number.isNaN(n) ? null : n];
+  })));
+  return { columns: names, rows };
+};
+const ydReportDescription = "Direct hisobotining tab bilan ajratilgan matnini qatorlarga aylantiradi (sonlar son, ID matn).";
+dash.loader('stats', { description: ydReportDescription, fn: ydParseReport });
+dash.loader('placements', { description: ydReportDescription, fn: ydParseReport });
+dash.loader('audience', { description: ydReportDescription, fn: ydParseReport });
+dash.loader('regions', { description: ydReportDescription, fn: ydParseReport });
+
+dash.loader('balance', {
+  description: "Hisob balansi va valyutasi; boshqa maydonlar (email sozlamalari) olinmaydi.",
+  fn: ({ answer }) => {
+    const a = typeof answer === 'string' ? JSON.parse(answer) : answer;
+    const errs = (a.ActionsResult || []).flatMap(r => r.Errors || []);
+    if (errs.length) throw new Error(errs.map(e => e.FaultString || e.FaultDetail || JSON.stringify(e)).join('; '));
+    if (!Array.isArray(a.Accounts)) throw new Error('Kutilmagan javob: ' + Object.keys(a).join(', '));
+    return {
+      columns: ['login', 'amount', 'available', 'currency'],
+      rows: a.Accounts.map(x => ({ login: x.Login, amount: Number(x.Amount), available: Number(x.AmountAvailableForTransfer), currency: x.Currency }))
+    };
+  }
+});
+
+dash.loader('metrika', {
+  description: "Metrika javobidagi jami qiymatlar: tashriflar va \"Forma yuborildi\" maqsadiga erishishlar.",
+  fn: ({ answer }) => {
+    const a = typeof answer === 'string' ? JSON.parse(answer) : answer;
+    if (a.errors || a.message) throw new Error(a.message || JSON.stringify(a.errors));
+    if (!Array.isArray(a.totals)) throw new Error('Kutilmagan javob: ' + Object.keys(a).join(', '));
+    return {
+      columns: ['date1', 'date2', 'visits', 'form_submits'],
+      rows: [{ date1: a.query && a.query.date1, date2: a.query && a.query.date2, visits: Number(a.totals[0]), form_submits: Number(a.totals[1]) }]
+    };
+  }
+});
+
+dash.calc('totals', {
+  inputs: ['stats'],
+  title: 'Davr va oldingi davr jami',
+  description: 'Oxirgi 30, 90 va 365 kun (kecha bilan tugaydi, Toshkent vaqti) hamda undan oldingi xuddi shuncha kun uchun jami va o\'zgarish.',
+  fn: (stats) => {
+    const shift = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+    const end = shift(new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10), -1);
+    const sum = (from, to) => {
+      const t = { cost: 0, impressions: 0, clicks: 0, conversions: 0 };
+      for (const r of stats) if (r.Date >= from && r.Date <= to) {
+        t.cost += r.Cost || 0; t.impressions += r.Impressions || 0; t.clicks += r.Clicks || 0; t.conversions += r.Conversions || 0;
+      }
+      t.ctr = t.impressions ? t.clicks / t.impressions : null;
+      t.cpc = t.clicks ? t.cost / t.clicks : null;
+      t.cpa = t.conversions ? t.cost / t.conversions : null;
+      return t;
+    };
+    const out = [];
+    for (const period of [30, 90, 365]) {
+      const from = shift(end, -(period - 1));
+      const cur = sum(from, end), prev = sum(shift(from, -period), shift(from, -1));
+      for (const metric of ['conversions', 'cpa', 'cost', 'clicks', 'cpc', 'ctr', 'impressions']) {
+        out.push({ period, metric, from, to: end, current: cur[metric], previous: prev[metric],
+          change: cur[metric] != null && prev[metric] ? cur[metric] / prev[metric] - 1 : null });
+      }
+    }
+    return out;
+  }
+});
+
+dash.calc('daily', {
+  inputs: ['stats'],
+  title: 'Kunlik jami',
+  description: 'Har kun uchun barcha kampaniyalar xarajati, kliklari va konversiyalari, kechagacha; ma\'lumotsiz kunlar 0.',
+  fn: (stats) => {
+    const shift = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+    const end = shift(new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10), -1);
+    const by = new Map();
+    for (const r of stats) {
+      const t = by.get(r.Date) || { date: r.Date, cost: 0, clicks: 0, conversions: 0 };
+      t.cost += r.Cost || 0; t.clicks += r.Clicks || 0; t.conversions += r.Conversions || 0;
+      by.set(r.Date, t);
+    }
+    const out = [];
+    for (let d = shift(end, -364); d <= end; d = shift(d, 1)) out.push(by.get(d) || { date: d, cost: 0, clicks: 0, conversions: 0 });
+    return out;
+  }
+});
+
+dash.calc('breakdown', {
+  inputs: ['stats', 'placements', 'audience', 'regions'],
+  title: 'Kesimlar bo\'yicha',
+  description: 'Kampaniya, kanal, yosh, jins va hudud bo\'yicha oxirgi 30, 90 va 365 kunlik jami va CTR, CPC, CPA; nomlar o\'zbekchaga o\'girilgan.',
+  fn: (stats, placements, audience, regions) => {
+    const shift = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+    const end = shift(new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10), -1);
+    const AGE = { AGE_0_17: '17 gacha', AGE_18_24: '18–24', AGE_25_34: '25–34', AGE_35_44: '35–44', AGE_45_54: '45–54', AGE_55: '55 va undan katta', UNKNOWN: 'Noma\'lum' };
+    const GENDER = { GENDER_MALE: 'Erkak', GENDER_FEMALE: 'Ayol', UNKNOWN: 'Noma\'lum' };
+    const REGION = { 'Узбекистан': 'O\'zbekiston (viloyat aniqlanmagan)', 'Сырдарьинская область': 'Sirdaryo viloyati', 'Кашкадарьинская область': 'Qashqadaryo viloyati', 'Наманган': 'Namangan', 'Джизак': 'Jizzax' };
+    const sources = [
+      ['campaign', stats, r => r.CampaignId, r => r.CampaignName],
+      ['placement', placements, r => r.Placement, r => r.Placement],
+      ['age', audience, r => r.Age, r => AGE[r.Age] || r.Age],
+      ['gender', audience, r => r.Gender, r => GENDER[r.Gender] || r.Gender],
+      ['region', regions, r => r.LocationOfPresenceName, r => REGION[r.LocationOfPresenceName] || r.LocationOfPresenceName]
+    ];
+    const out = [];
+    for (const period of [30, 90, 365]) {
+      const from = shift(end, -(period - 1));
+      for (const [dim, rows, key, label] of sources) {
+        const by = new Map();
+        for (const r of rows) {
+          if (r.Date < from || r.Date > end) continue;
+          const k = key(r);
+          const t = by.get(k) || { id: dim + '|' + period + '|' + k, dim, period, key: k, name: label(r), last: r.Date, impressions: 0, clicks: 0, cost: 0, conversions: 0 };
+          if (r.Date > t.last) t.last = r.Date;
+          t.impressions += r.Impressions || 0; t.clicks += r.Clicks || 0; t.cost += r.Cost || 0; t.conversions += r.Conversions || 0;
+          by.set(k, t);
+        }
+        for (const t of by.values()) out.push({ ...t,
+          ctr: t.impressions ? t.clicks / t.impressions : null,
+          cpc: t.clicks ? t.cost / t.clicks : null,
+          cpa: t.conversions ? t.cost / t.conversions : null });
+      }
+    }
+    return out;
+  }
+});
+
+dash.calc('insights', {
+  inputs: ['breakdown'],
+  title: 'Kanallar va auditoriya xulosalari',
+  description: 'Har davr uchun: konversiyasiz kanallarga ketgan pul va ulushi, eng arzon konversiya bergan kanal, kanallar soni, yoshi noma\'lum ko\'rsatishlar ulushi.',
+  fn: (breakdown) => [30, 90, 365].map(period => {
+    const ch = breakdown.filter(r => r.dim === 'placement' && r.period === period);
+    const spent = ch.reduce((a, r) => a + r.cost, 0);
+    const waste = ch.filter(r => r.cost > 0 && r.conversions === 0);
+    const best = ch.filter(r => r.conversions > 0).sort((a, b) => a.cpa - b.cpa)[0];
+    const ages = breakdown.filter(r => r.dim === 'age' && r.period === period);
+    const imp = ages.reduce((a, r) => a + r.impressions, 0);
+    const unk = ages.filter(r => r.key === 'UNKNOWN').reduce((a, r) => a + r.impressions, 0);
+    return {
+      period,
+      channels: ch.length,
+      channels_clicked: ch.filter(r => r.clicks > 0).length,
+      waste_count: waste.length,
+      waste_cost: waste.reduce((a, r) => a + r.cost, 0),
+      waste_share: spent ? waste.reduce((a, r) => a + r.cost, 0) / spent : null,
+      best_channel: best ? best.name : null,
+      best_cpa: best ? best.cpa : null,
+      unknown_age_share: imp ? unk / imp : null
+    };
+  })
+});
+</script>
+
 <script>
 (() => {
+  const LABEL = { 30: 'Oxirgi 30 kun', 90: 'Oxirgi 90 kun', 365: 'Oxirgi 1 yil' };
   const MONTHS = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
   const day = (s) => { const d = new Date(s + 'T00:00:00Z'); return d.getUTCDate() + '-' + MONTHS[d.getUTCMonth()]; };
   const grp = (v) => d3.format(',')(v).replace(/,/g, ' ');
-  let CUR = 'so\'m';
-  const money = (v) => v == null ? '—' : grp(Math.round(v)) + ' ' + CUR;
+  const som = (v) => v == null ? '—' : grp(Math.round(v)) + ' so\'m';
   const count = (v) => v == null ? '—' : grp(Math.round(v));
   const pct = (v) => v == null ? '—' : d3.format('.2%')(v);
-  const addDays = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
-  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const share = (v) => v == null ? '—' : d3.format('.0%')(v);
+  const FMT = { conversions: count, cpa: som, cost: som, clicks: count, cpc: som, ctr: pct, impressions: count };
+  // O'sish yaxshimi: xarajat neytral, CPA va CPC pasayishi yaxshi.
+  const GOOD_UP = { conversions: true, cpa: false, cost: null, clicks: true, cpc: false, ctr: true, impressions: true };
+  const INS = { waste_count: count, waste_cost: som, waste_share: share, best_channel: v => v == null ? 'Konversiya bo\'lmadi' : v, best_cpa: som, channels: count, channels_clicked: count, unknown_age_share: share };
 
-  let DATA = null, days = 90, sortKey = null, sortDir = -1;
-  try { days = Number(localStorage.getItem('yd-days')) || 90; } catch (e) {}
+  const getDays = () => [30, 90, 365].includes(Number(dash.params().days)) ? Number(dash.params().days) : 90;
+  document.getElementById('yd-range').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-days]');
+    if (b) dash.setParams({ days: Number(b.dataset.days) });
+  });
 
-  // Hisob-kitoblar
-  function totals(rows) {
-    const sum = (k) => rows.reduce((a, r) => a + (r[k] || 0), 0);
-    const cost = sum('cost'), imp = sum('impressions'), clicks = sum('clicks'), conv = sum('conversions');
-    return { cost, impressions: imp, clicks, conversions: conv,
-      ctr: imp ? clicks / imp : null, cpc: clicks ? cost / clicks : null, cpa: conv ? cost / conv : null };
-  }
-  function daily(rows, from, to) {
-    const by = new Map();
-    for (const r of rows) {
-      const t = by.get(r.date) || { date: r.date, cost: 0, clicks: 0, conversions: 0 };
-      t.cost += r.cost || 0; t.clicks += r.clicks || 0; t.conversions += r.conversions || 0;
-      by.set(r.date, t);
-    }
-    const out = [];
-    for (let d = from; d <= to; d = addDays(d, 1)) out.push(by.get(d) || { date: d, cost: 0, clicks: 0, conversions: 0 });
-    return out;
-  }
-  function campaigns(rows) {
-    const by = new Map();
-    for (const r of rows) {
-      const t = by.get(r.campaign_id) || { campaign_id: r.campaign_id, campaign: r.campaign, last: r.date, cost: 0, impressions: 0, clicks: 0, conversions: 0 };
-      if (r.date > t.last) t.last = r.date;
-      t.cost += r.cost || 0; t.impressions += r.impressions || 0; t.clicks += r.clicks || 0; t.conversions += r.conversions || 0;
-      by.set(r.campaign_id, t);
-    }
-    return [...by.values()].map(t => ({ ...t,
-      ctr: t.impressions ? t.clicks / t.impressions : null,
-      cpc: t.clicks ? t.cost / t.clicks : null,
-      cpa: t.conversions ? t.cost / t.conversions : null
-    })).sort((a, b) => a.last < b.last ? 1 : a.last > b.last ? -1 : b.cost - a.cost);
-  }
+  const setState = (el, st) => el.classList.toggle('dash-skeleton', st === 'loading');
+  const msg = (box, text, quiet) => {
+    box.querySelectorAll('svg, .yd-err').forEach(n => n.remove());
+    const s = document.createElement('div'); s.className = 'yd-err' + (quiet ? ' quiet' : ''); s.textContent = text; box.appendChild(s);
+  };
 
   // Grafik
+  const tipFor = (box) => {
+    let t = box.querySelector('.yd-tip');
+    if (!t) { t = document.createElement('div'); t.className = 'yd-tip'; t.hidden = true; box.appendChild(t); }
+    return t;
+  };
+  const showTip = (box, tip, x, y, date, label) => {
+    tip.textContent = '';
+    const d = document.createElement('div'); d.className = 'd'; d.textContent = date;
+    const v = document.createElement('div'); v.textContent = label;
+    tip.append(d, v); tip.hidden = false;
+    const w = tip.offsetWidth, W = box.clientWidth;
+    tip.style.left = Math.max(0, Math.min(W - w, x - w / 2)) + 'px';
+    tip.style.top = Math.max(0, y - tip.offsetHeight - 8) + 'px';
+  };
+  const measure = (svg, texts) => {
+    const g = svg.append('g').attr('font-size', 'var(--cds-font-size-caption)');
+    const w = d3.max(texts, s => g.append('text').text(s).node().getComputedTextLength()) || 0;
+    g.remove(); return w;
+  };
   function bars(box, rows, key, yFmt, color, label) {
-    box.textContent = '';
-    if (!rows.some(r => r[key] > 0)) {
-      const e = document.createElement('div'); e.className = 'empty'; e.textContent = 'Bu davrda ma\'lumot yo\'q'; box.appendChild(e); return;
-    }
+    box.querySelectorAll('svg, .yd-err').forEach(n => n.remove());
+    if (!rows.some(r => r[key] > 0)) { msg(box, 'Bu davrda ma\'lumot yo\'q', true); return; }
     const W = box.clientWidth || 320, H = 220;
-    const svg = d3.select(box).append('svg').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
-    const measure = (texts) => {
-      const g = svg.append('g').attr('font-size', 12);
-      const w = d3.max(texts, s => g.append('text').text(s).node().getComputedTextLength()) || 0;
-      g.remove(); return w;
-    };
+    const svg = d3.select(box).insert('svg', ':first-child').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
     const y = d3.scaleLinear([0, d3.max(rows, r => r[key]) || 1], [H - 24, 8]).nice();
     const ticks = y.ticks(4).filter(t => key === 'cost' || Number.isInteger(t));
-    const ml = Math.ceil(measure(ticks.map(yFmt))) + 10;
+    const ml = Math.ceil(measure(svg, ticks.map(yFmt))) + 10;
     const x = d3.scaleBand(rows.map(r => r.date), [ml, W - 4]).paddingInner(0.25);
     svg.append('g').selectAll('line').data(ticks).join('line')
-      .attr('x1', ml).attr('x2', W - 4).attr('y1', d => y(d)).attr('y2', d => y(d)).attr('stroke', css('--grid'));
+      .attr('x1', ml).attr('x2', W - 4).attr('y1', d => y(d)).attr('y2', d => y(d))
+      .attr('stroke', 'var(--cds-chart-grid)').attr('stroke-width', 1);
     svg.append('g').selectAll('text').data(ticks).join('text')
       .attr('x', ml - 6).attr('y', d => y(d)).attr('dy', '0.32em').attr('text-anchor', 'end')
-      .attr('fill', css('--muted')).attr('font-size', 12).text(yFmt);
-    const lw = measure(['30-sen']) + 16;
+      .attr('fill', 'var(--color-fg-muted)').attr('font-size', 'var(--cds-font-size-caption)').text(yFmt);
+    const lw = measure(svg, ['30-sen']) + 16;
     const step = Math.max(1, Math.ceil(rows.length / Math.max(2, Math.floor((W - ml) / lw))));
     svg.append('g').selectAll('text').data(rows.filter((_, i) => i % step === 0)).join('text')
       .attr('x', d => x(d.date) + x.bandwidth() / 2).attr('y', H - 6).attr('text-anchor', 'middle')
-      .attr('fill', css('--muted')).attr('font-size', 12).text(d => day(d.date));
-    svg.append('line').attr('x1', ml).attr('x2', W - 4).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', css('--axis'));
+      .attr('fill', 'var(--color-fg-muted)').attr('font-size', 'var(--cds-font-size-caption)')
+      .text(d => day(d.date));
+    svg.append('line').attr('x1', ml).attr('x2', W - 4).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', 'var(--cds-chart-axis)');
     const bw = Math.min(32, x.bandwidth());
     svg.append('g').selectAll('rect').data(rows).join('rect')
       .attr('x', d => x(d.date) + (x.bandwidth() - bw) / 2).attr('width', bw)
       .attr('y', d => y(d[key])).attr('height', d => y(0) - y(d[key])).attr('rx', Math.min(4, bw / 2))
-      .attr('fill', color);
-    const tip = document.createElement('div'); tip.className = 'tip'; tip.hidden = true; box.appendChild(tip);
+      .style('fill', color).attr('fill-opacity', 0.85);
+    const tip = tipFor(box);
     svg.append('g').selectAll('rect').data(rows).join('rect')
       .attr('x', d => x(d.date)).attr('width', x.step()).attr('y', 0).attr('height', H - 24).attr('fill', 'transparent')
-      .on('mouseenter', (e, d) => {
-        tip.textContent = '';
-        const a = document.createElement('div'); a.className = 'd'; a.textContent = day(d.date);
-        const b = document.createElement('div'); b.textContent = label(d);
-        tip.append(a, b); tip.hidden = false;
-        const px = x(d.date) + x.bandwidth() / 2;
-        tip.style.left = Math.max(0, Math.min(box.clientWidth - tip.offsetWidth, px - tip.offsetWidth / 2)) + 'px';
-        tip.style.top = Math.max(0, y(d[key]) - tip.offsetHeight - 8) + 'px';
-      })
+      .on('mouseenter', (e, d) => showTip(box, tip, x(d.date) + x.bandwidth() / 2, y(d[key]), day(d.date), label(d)))
       .on('mouseleave', () => { tip.hidden = true; });
   }
 
-  function render() {
-    if (!DATA) return;
-    document.querySelectorAll('#range button').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.days) === days)));
-    const to = DATA.date_to, from = addDays(to, -(days - 1));
-    const rows = DATA.rows.filter(r => r.date >= from && r.date <= to);
-    const t = totals(rows), camps = campaigns(rows);
+  // Jadvallar: saralash holati har jadval uchun alohida
+  const sorts = {};
+  const TABLES = {
+    'yd-place': { dim: 'placement', cols: ['cost', 'impressions', 'clicks', 'ctr', 'cpc', 'conversions', 'cpa'], bar: true, sort: ['cost', -1] },
+    'yd-camp': { dim: 'campaign', cols: ['last', 'cost', 'impressions', 'clicks', 'ctr', 'cpc', 'conversions', 'cpa'], bar: true, sort: ['last', -1] },
+    'yd-age': { dim: 'age', cols: ['clicks', 'cost', 'conversions', 'cpa'], sort: ['clicks', -1] },
+    'yd-gender': { dim: 'gender', cols: ['clicks', 'cost', 'conversions', 'cpa'], sort: ['clicks', -1] },
+    'yd-region': { dim: 'region', cols: ['clicks', 'cost', 'conversions', 'cpa'], sort: ['clicks', -1] }
+  };
+  const COLFMT = { ...FMT, last: (v) => v ? day(v) : '—' };
+  for (const [tid, cfg] of Object.entries(TABLES)) {
+    sorts[tid] = { key: cfg.sort[0], dir: cfg.sort[1] };
+    document.querySelectorAll(`#${tid} th button`).forEach(btn => btn.addEventListener('click', () => {
+      const s = sorts[tid], k = btn.dataset.k;
+      if (k === s.key) s.dir = -s.dir; else { s.key = k; s.dir = k === 'name' ? 1 : -1; }
+      render();
+    }));
+  }
+  const q = document.getElementById('yd-place-q');
+  q.addEventListener('input', () => render());
 
-    for (const [k, f] of [['conversions', count], ['cpa', money], ['cost', money], ['clicks', count], ['cpc', money], ['ctr', pct], ['impressions', count]]) {
-      document.getElementById('k-' + k).textContent = f(t[k]);
-    }
-    const bal = DATA.balance;
-    document.getElementById('k-balance').textContent = bal ? money(bal.amount) : '—';
-
-    const best = camps.filter(c => c.conversions > 0).sort((a, b) => a.cpa - b.cpa)[0];
-    const take = document.getElementById('take'); take.textContent = '';
-    const b = (s) => { const e = document.createElement('b'); e.textContent = s; return e; };
-    take.append(`${day(from)} – ${day(to)}: `, b(money(t.cost)), ' sarflandi, ', b(count(t.conversions)),
-      ' ta konversiya, bitta konversiya o\'rtacha ', b(money(t.cpa)), '.');
-    if (best) take.append(' Eng arzon konversiya: ', b(best.campaign), ' (', b(money(best.cpa)), ').');
-
-    const d = daily(rows, from, to);
-    bars(document.getElementById('c-spend'), d, 'cost', v => v >= 1000 ? grp(v / 1000) + 'K' : String(v), css('--bar'),
-      r => 'Xarajat ' + money(r.cost) + ' · ' + count(r.clicks) + ' klik');
-    bars(document.getElementById('c-conv'), d, 'conversions', v => String(v), css('--bar2'),
-      r => count(r.conversions) + ' konversiya');
-
-    let list = [...camps];
-    if (sortKey) list.sort((x, y) => {
-      const a = x[sortKey], z = y[sortKey];
-      if (a == null) return 1; if (z == null) return -1;
-      return (typeof a === 'string' ? a.localeCompare(z) : a - z) * sortDir;
+  function fillTable(tid, all, days) {
+    const cfg = TABLES[tid], table = document.getElementById(tid), s = sorts[tid];
+    const hideNarrow = new Set([...table.querySelectorAll('th.yd-hide-narrow')].map(th => th.dataset.field));
+    let rows = all.filter(r => r.dim === cfg.dim && r.period === days);
+    if (tid === 'yd-place' && q.value.trim()) { const t = q.value.trim().toLowerCase(); rows = rows.filter(r => r.name.toLowerCase().includes(t)); }
+    rows.sort((x, y) => {
+      const a = x[s.key], z = y[s.key];
+      if (a == null && z == null) return 0; if (a == null) return 1; if (z == null) return -1;
+      return (typeof a === 'string' ? a.localeCompare(z) : a - z) * s.dir || (y.cost - x.cost);
     });
-    const tb = document.querySelector('#camp tbody'); tb.textContent = '';
-    const maxCost = d3.max(list, r => r.cost) || 1;
-    for (const r of list) {
-      const tr = tb.insertRow();
-      tr.insertCell().textContent = r.campaign;
-      const last = tr.insertCell(); last.className = 'hide-narrow'; last.textContent = day(r.last);
-      const sp = tr.insertCell();
-      const bar = document.createElement('span'); bar.className = 'cbar'; bar.style.width = Math.max(2, 48 * r.cost / maxCost) + 'px';
-      sp.append(bar, money(r.cost));
-      for (const [v, cls] of [[count(r.impressions), 'hide-narrow'], [count(r.clicks), ''], [pct(r.ctr), 'hide-narrow'], [money(r.cpc), 'hide-narrow'], [count(r.conversions), ''], [money(r.cpa), '']]) {
-        const td = tr.insertCell(); td.textContent = v; if (cls) td.className = cls;
+    const tb = table.querySelector('tbody'); tb.textContent = '';
+    const maxCost = d3.max(rows, r => r.cost) || 1;
+    for (const r of rows) {
+      const tr = tb.insertRow(); tr.dataset.key = r.id;
+      tr.insertCell().textContent = r.name;
+      for (const c of cfg.cols) {
+        const td = tr.insertCell();
+        if (hideNarrow.has(c)) td.className = 'yd-hide-narrow';
+        if (c === 'cost' && cfg.bar) {
+          const bar = document.createElement('span'); bar.className = 'yd-bar'; bar.style.width = Math.max(2, 48 * r.cost / maxCost) + 'px';
+          td.append(bar, COLFMT[c](r[c]));
+        } else td.textContent = COLFMT[c](r[c]);
+        if ((c === 'conversions' && r.conversions === 0) || (c === 'cost' && r.cost === 0)) td.classList.add('zero');
       }
     }
-    if (!list.length) { const td = tb.insertRow().insertCell(); td.colSpan = 9; td.className = 'note'; td.textContent = 'Bu davrda kampaniyalar ko\'rsatilmagan.'; }
-    document.querySelectorAll('#camp th').forEach(th => {
-      const k = th.querySelector('button').dataset.k;
-      th.setAttribute('aria-sort', k === sortKey ? (sortDir > 0 ? 'ascending' : 'descending') : 'none');
+    if (!rows.length) { const td = tb.insertRow().insertCell(); td.colSpan = cfg.cols.length + 1; td.className = 'yd-note'; td.textContent = 'Bu davrda ma\'lumot yo\'q.'; }
+    table.querySelectorAll('th').forEach(th => {
+      const k = th.querySelector('button') && th.querySelector('button').dataset.k;
+      th.setAttribute('aria-sort', k === s.key ? (s.dir > 0 ? 'ascending' : 'descending') : 'none');
     });
-
-    const upd = new Date(DATA.updated);
-    document.getElementById('foot').textContent =
-      `Hisob: ${DATA.login} · Valyuta: ${DATA.currency} · Ma'lumot yangilangan: ${upd.toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })} (Toshkent vaqti)`;
   }
 
-  document.getElementById('range').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-days]'); if (!btn) return;
-    days = Number(btn.dataset.days);
-    try { localStorage.setItem('yd-days', String(days)); } catch (err) {}
-    render();
-  });
-  document.querySelectorAll('#camp th button').forEach(btn => btn.addEventListener('click', () => {
-    const k = btn.dataset.k;
-    if (k === sortKey) sortDir = -sortDir; else { sortKey = k; sortDir = k === 'campaign' ? 1 : -1; }
-    render();
-  }));
-  let resizeTimer;
-  window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 150); });
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+  function render() {
+    const days = getDays();
+    document.querySelectorAll('#yd-range button').forEach(b => b.setAttribute('aria-pressed', String(Number(b.dataset.days) === days)));
+    document.querySelectorAll('.yd-period').forEach(el => { el.textContent = LABEL[days]; });
 
-  fetch('data.json', { cache: 'no-store' })
-    .then(r => { if (!r.ok) throw new Error('data.json topilmadi (' + r.status + ')'); return r.json(); })
-    .then(json => { DATA = json; CUR = json.currency === 'UZS' ? 'so\'m' : json.currency; render(); })
-    .catch(err => {
-      const box = document.getElementById('error');
-      box.hidden = false;
-      box.textContent = 'Ma\'lumot yuklanmadi: ' + err.message + '. Avval scripts/fetch_data.py ni ishga tushiring (README\'ga qarang).';
-      document.getElementById('take').textContent = 'Ma\'lumot yo\'q.';
+    // Ko'rsatkichlar va o'zgarish
+    const t = dash.data('totals');
+    document.querySelectorAll('[data-source="totals"]').forEach(el => {
+      const metric = new URLSearchParams(el.dataset.where).get('metric');
+      el.dataset.where = `period=${days}&metric=${metric}`;
+      setState(el, t.status);
+      el.classList.remove('good', 'bad');
+      const row = t.status === 'ok' ? t.data.find(r => r.period === days && r.metric === metric) : null;
+      if (!row) { el.textContent = t.status === 'error' && el.classList.contains('val') ? 'Yuklanmadi' : '—'; return; }
+      if (el.dataset.field === 'current') { el.textContent = FMT[metric](row.current); return; }
+      if (row.change == null) { el.textContent = row.previous ? '—' : 'Oldingi ' + days + ' kunda ma\'lumot yo\'q'; return; }
+      const c = row.change;
+      el.textContent = (c > 0 ? '↑ ' : c < 0 ? '↓ ' : '') + d3.format('.0%')(Math.abs(c)) + ' oldingi ' + days + ' kunga nisbatan';
+      const g = GOOD_UP[metric];
+      if (g != null && Math.abs(c) >= 0.005) el.classList.add((c > 0) === g ? 'good' : 'bad');
     });
+
+    const ins = dash.data('insights');
+    document.querySelectorAll('[data-source="insights"]').forEach(el => {
+      el.dataset.where = `period=${days}`;
+      setState(el, ins.status);
+      const row = ins.status === 'ok' ? ins.data.find(r => r.period === days) : null;
+      el.textContent = row ? INS[el.dataset.field](row[el.dataset.field]) : '—';
+    });
+
+    const bal = dash.data('balance');
+    document.querySelectorAll('[data-source="balance"]').forEach(el => {
+      setState(el, bal.status);
+      const r = bal.status === 'ok' ? bal.data[0] : null;
+      el.textContent = r ? grp(Math.round(r.amount)) + ' ' + (r.currency === 'UZS' ? 'so\'m' : r.currency) : (bal.status === 'error' ? 'Yuklanmadi' : '—');
+    });
+
+    const m = dash.data('metrika');
+    const mr = m.status === 'ok' ? m.data[0] : null;
+    document.querySelectorAll('[data-source="metrika"]').forEach(el => {
+      setState(el, m.status);
+      el.textContent = mr ? count(mr[el.dataset.field]) : (m.status === 'error' ? 'Yuklanmadi' : '—');
+      el.classList.toggle('yd-warn', !!mr && mr[el.dataset.field] === 0);
+    });
+    document.getElementById('yd-metrika-note').textContent = !mr ? '' : mr.visits === 0
+      ? 'Metrika hisoblagichi oxirgi 30 kunda saytda birorta ham tashrif qayd etmagan. Hisoblagich kodi sahifaga o\'rnatilmagan yoki ishlamayapti, shuning uchun "Forma yuborildi" maqsadi va uning qiymati hisoblanmayapti. Direct\'dagi konversiyalar bu maqsaddan emas, kampaniyaning o\'z maqsadlaridan olinadi.'
+      : 'Metrika tashriflarni qayd etyapti. Direct\'dagi konversiyalar kampaniyada tanlangan maqsadlar bo\'yicha hisoblanadi.';
+
+    // Grafiklar
+    const d = dash.data('daily');
+    const win = d.status === 'ok' ? d.data.slice(-days) : [];
+    const charts = [
+      ['yd-spend', 'cost', v => v >= 1000 ? grp(v / 1000) + 'K' : String(v), dash.colors[0], r => 'Xarajat ' + som(r.cost) + ' · ' + count(r.clicks) + ' klik'],
+      ['yd-conv', 'conversions', v => String(v), dash.colors[1], r => count(r.conversions) + ' konversiya']
+    ];
+    for (const [id, key, yFmt, color, label] of charts) {
+      const box = document.getElementById(id);
+      setState(box, d.status);
+      if (d.status === 'ok') bars(box, win, key, yFmt, color, label);
+      else if (d.status === 'error') msg(box, 'Yuklanmadi');
+      else box.querySelectorAll('svg, .yd-err').forEach(n => n.remove());
+    }
+
+    const b = dash.data('breakdown');
+    const all = b.status === 'ok' ? b.data : [];
+    for (const tid of Object.keys(TABLES)) fillTable(tid, all, days);
+  }
+
+  dash.onData(render);
 })();
+</script>
+
+<p class="yd-foot" id="yd-foot"></p>
+</div>
+<script>
+dash.load('data.json').then(d => {
+  const upd = new Date(d.updated).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' });
+  document.getElementById('yd-foot').textContent = 'Hisob: ' + d.login + ' · Valyuta: ' + d.currency + ' · Ma\'lumot yangilangan: ' + upd + ' (Toshkent vaqti)';
+}).catch(err => {
+  const b = document.getElementById('yd-banner');
+  b.hidden = false;
+  b.textContent = 'Ma\'lumot yuklanmadi: ' + err.message + '. Avval scripts/fetch_data.py ni ishga tushiring (README\'ga qarang).';
+});
 </script>
 </body>
 </html>
