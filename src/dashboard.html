@@ -490,10 +490,10 @@ dash.calc('totals', {
 });
 
 dash.calc('entities', {
-  inputs: ['stats', 'lifetime'],
+  inputs: ['stats', 'lifetime', 'manual_ads'],
   title: 'Kampaniya, guruh va kreativlar',
-  description: 'Har kampaniya, guruh (ads set) va kreativ uchun tanlangan davrdagi rasxod, ko\'rsatish, klik, konversiya, CTR, CPC, CPA, lid foizi, ROI (1 lid = 420 000 so\'m) hamda butun muddatdagi birinchi va oxirgi ko\'rsatish kuni.',
-  fn: (stats, lifetime) => {
+  description: 'Har kampaniya, guruh (ads set) va kreativ uchun tanlangan davrdagi rasxod, ko\'rsatish, klik, konversiya, CTR, CPC, CPA, lid foizi, ROI (1 lid = 420 000 so\'m) hamda butun muddatdagi birinchi va oxirgi ko\'rsatish kuni. Kabinetdan qo\'shilgan, hech qachon ko\'rsatilmagan e\'lonlar 0 natija bilan.',
+  fn: (stats, lifetime, manual_ads) => {
     const LEAD_VALUE = 420000;
     const shift = (s, n) => { const d = new Date(s + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
     const yesterday = shift(new Date(Date.now() + 5 * 3600e3).toISOString().slice(0, 10), -1);
@@ -520,6 +520,11 @@ dash.calc('entities', {
       }
       t.life_cost += r.Cost || 0; t.life_conversions += r.Conversions || 0;
     }
+    // API bermaydigan, kabinetdan qo'shilgan e'lonlar: statistikasi yo'q, faqat nomi va matni
+    for (const r of manual_ads) for (const [level] of LEVELS) {
+      const t = get(level, r);
+      if (level === 'ad') { t.title = r.Title || null; t.text = r.Text || null; }
+    }
     for (const r of stats) for (const [level] of LEVELS) {
       const t = get(level, r);
       t.impressions += r.Impressions || 0; t.clicks += r.Clicks || 0; t.cost += r.Cost || 0; t.conversions += r.Conversions || 0;
@@ -531,11 +536,12 @@ dash.calc('entities', {
     for (const t of ads) { seen[t.adgroup_id] = (seen[t.adgroup_id] || 0) + 1; t.ad_no = seen[t.adgroup_id]; }
     return all.map(t => {
       const cost = Math.round(t.cost * 100) / 100;
-      const name = t.level === 'campaign' ? t.campaign_name : t.level === 'adgroup' ? t.adgroup_name : 'Kreativ ' + t.ad_no + ' · …' + t.entity_id.slice(-4);
+      const name = t.level === 'campaign' ? t.campaign_name : t.level === 'adgroup' ? t.adgroup_name
+        : (t.title ? t.title + ' · …' + t.entity_id.slice(-4) : 'Kreativ ' + t.ad_no + ' · …' + t.entity_id.slice(-4));
       const { days, ...rest } = t;
       return { ...rest, name, cost, life_cost: Math.round(t.life_cost * 100) / 100,
         active_days: days.size,
-        status: t.last_date && t.last_date >= yesterday ? 'Faol' : 'To\'xtagan',
+        status: !t.last_date ? 'Ko\'rsatilmagan' : t.last_date >= yesterday ? 'Faol' : 'To\'xtagan',
         ctr: t.impressions ? t.clicks / t.impressions : null,
         cpc: t.clicks ? cost / t.clicks : null,
         cpa: t.conversions ? cost / t.conversions : null,

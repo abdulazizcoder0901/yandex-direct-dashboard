@@ -32,7 +32,8 @@ REPORTS = {
     "regions": ["Date", "LocationOfPresenceName"] + METRICS,
 }
 TASHKENT = datetime.timezone(datetime.timedelta(hours=5))
-OUT = Path(__file__).resolve().parent.parent / "site" / "data.json"
+ROOT = Path(__file__).resolve().parent.parent
+OUT = ROOT / "site" / "data.json"
 
 
 def request(url, body=None, headers=None):
@@ -200,6 +201,9 @@ def main():
         print(f"{name}: {len(out[name])} qator")
     out["balance"] = get_balance(token, login)
     out["videos"], out["images"] = get_library(token, login)
+    # API bermaydigan, kabinetdan qo'lda qo'shilgan e'lonlar (hech qachon ko'rsatilmaganlar)
+    manual = ROOT / "data" / "manual_ads.json"
+    out["manual_ads"] = json.loads(manual.read_text(encoding="utf-8")) if manual.exists() else []
     out["metrika"] = get_metrika(token, counter_id, goal_id)
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
