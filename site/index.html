@@ -407,7 +407,14 @@ window.dash = (() => {
         <div class="yd-chart" data-source="stats" id="yd-ent-chart"></div>
       </div>
       <div class="yd-card" id="yd-children-card">
-        <h3 id="yd-children-title">Guruhlar (ads set)</h3>
+        <div class="yd-tools">
+          <h3 id="yd-children-title">Guruhlar (ads set)</h3>
+          <div class="yd-seg" id="yd-child-filter" role="group" aria-label="Ishlagan yoki ishlamagan">
+            <button data-f="all" aria-pressed="true">Barchasi</button>
+            <button data-f="worked" aria-pressed="false" title="Tanlangan davrda kamida bir marta ko'rsatilgan">Ishlagan</button>
+            <button data-f="idle" aria-pressed="false" title="Tanlangan davrda bir marta ham ko'rsatilmagan">Ishlamagan</button>
+          </div>
+        </div>
         <div class="yd-scroll">
           <table class="yd-table" id="yd-children" data-source="entities" data-row-key="id">
             <thead><tr><th data-field="name"><button data-k="name">Nomi</button></th><th data-field="status" class="yd-hide-narrow"><button data-k="status">Holat</button></th><th data-field="first_date" class="yd-hide-narrow"><button data-k="first_date">Yoqilgan</button></th><th data-field="last_date" class="yd-hide-narrow"><button data-k="last_date">O'chgan</button></th><th data-field="cost"><button data-k="cost">Rasxod</button></th><th data-field="impressions" class="yd-hide-narrow"><button data-k="impressions">Ko'rsatish</button></th><th data-field="clicks"><button data-k="clicks">Klik</button></th><th data-field="ctr" class="yd-hide-narrow"><button data-k="ctr">CTR</button></th><th data-field="cpc" class="yd-hide-narrow"><button data-k="cpc">CPC</button></th><th data-field="conversions"><button data-k="conversions">Konv.</button></th><th data-field="cr" class="yd-hide-narrow"><button data-k="cr">Lid %</button></th><th data-field="cpa"><button data-k="cpa">CPA</button></th><th data-field="roi" class="yd-hide-narrow"><button data-k="roi">ROI</button></th></tr></thead>
@@ -1068,6 +1075,15 @@ dash.calc('insights', {
     nolead: (r) => r.cost > 0 && r.conversions === 0
   };
   let adFilter = 'all';
+  // Kampaniya ichidagi ro'yxat: tanlangan davrda ko'rsatilgan (ishlagan) yoki ko'rsatilmagan (ishlamagan)
+  const CHILD_FILTERS = { all: () => true, worked: (r) => r.impressions > 0, idle: (r) => !(r.impressions > 0) };
+  let childFilter = 'all';
+  document.getElementById('yd-child-filter').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-f]'); if (!b) return;
+    childFilter = b.dataset.f;
+    document.querySelectorAll('#yd-child-filter button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    render();
+  });
   document.getElementById('yd-ad-filter').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-f]'); if (!b) return;
     adFilter = b.dataset.f;
@@ -1162,7 +1178,7 @@ dash.calc('insights', {
     if (childLevel) {
       document.getElementById('yd-children-title').textContent = childLevel === 'adgroup' ? 'Guruhlar (ads set)' : 'Kreativlar';
       const parentKey = sel.level === 'campaign' ? 'campaign_id' : 'adgroup_id';
-      fillEntityTable('yd-children', all.filter(r => r.level === childLevel && r[parentKey] === sel.entity_id));
+      fillEntityTable('yd-children', all.filter(r => r.level === childLevel && r[parentKey] === sel.entity_id && CHILD_FILTERS[childFilter](r)));
     }
 
     // Kunlik rasxod shu bo'lim bo'yicha
