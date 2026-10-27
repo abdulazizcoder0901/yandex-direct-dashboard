@@ -181,10 +181,15 @@ def get_metrika(token, counter_id, goal_id):
 
 
 def main():
-    token = os.environ.get("YANDEX_DIRECT_TOKEN")
+    token = (os.environ.get("YANDEX_DIRECT_TOKEN") or "").strip()
+    # Butun manzil nusxalangan bo'lsa (...#access_token=...&...), faqat tokenning o'zini olamiz
+    if "access_token=" in token:
+        token = token.split("access_token=", 1)[1].split("&", 1)[0]
     if not token:
         sys.exit("YANDEX_DIRECT_TOKEN berilmagan.")
-    login = os.environ.get("YANDEX_DIRECT_LOGIN") or None
+    # Token qiymatini emas, faqat ko'rinishini chiqaramiz: noto'g'ri qiymat qo'yilganini bilish uchun
+    print(f"Token: {len(token)} belgi, y0_ bilan boshlanadi: {token.startswith('y0_')}")
+    login = (os.environ.get("YANDEX_DIRECT_LOGIN") or "").strip() or None
     counter_id = os.environ.get("METRIKA_COUNTER_ID", "112358613")
     goal_id = os.environ.get("METRIKA_FORM_GOAL_ID", "609995532")
 
