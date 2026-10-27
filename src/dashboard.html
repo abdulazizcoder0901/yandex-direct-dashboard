@@ -41,6 +41,7 @@
 .yd-seg button[aria-pressed="true"] { color: var(--yd-accent-fg); background: var(--yd-accent); border-color: var(--yd-accent); }
 .yd-seg button:focus-visible { outline: 2px solid var(--yd-accent); outline-offset: 2px; }
 .yd-seg .n { opacity: .7; margin-left: 4px; }
+.yd-sub-head { font-size: 15px; font-weight: 500; margin: 8px 0 -8px; }
 .yd-pill { font: inherit; font-size: 14px; color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 999px; padding: 8px 18px; cursor: pointer; white-space: nowrap; }
 .yd-pill:hover { border-color: #3a4152; }
 .yd-pill[aria-pressed="true"] { background: var(--yd-accent); border-color: var(--yd-accent); color: var(--yd-accent-fg); }
@@ -309,6 +310,23 @@
   </section>
 
   <section class="yd-panel" id="kreativlar" role="tabpanel" hidden>
+    <div class="yd-card" id="library">
+      <div class="yd-tools">
+        <h3>Barcha kreativlar: <span data-source="library_summary" data-field="total" data-row="0" class="dash-skeleton">—</span> ta</h3>
+        <div class="yd-seg" id="yd-lib-filter" role="group" aria-label="Kreativ turi">
+          <button data-f="all" aria-pressed="true">Hammasi</button>
+          <button data-f="video" aria-pressed="false">Video</button>
+          <button data-f="image" aria-pressed="false">Rasm</button>
+        </div>
+      </div>
+      <div class="yd-scroll tall">
+        <table class="yd-table" id="yd-lib" data-source="library" data-row-key="id">
+          <thead><tr><th data-field="name">Nomi</th><th data-field="kind">Turi</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <h3 class="yd-sub-head">Ko'rsatilgan kreativlar natijalari</h3>
     <div class="yd-tools">
       <div class="yd-seg" id="yd-ad-filter" role="group" aria-label="Kreativlarni ajratish">
         <button data-f="all" aria-pressed="true">Hammasi</button>
@@ -327,24 +345,6 @@
       </div>
     </div>
     <p class="yd-note">Ishlayotgan: kecha yoki bugun ko'rsatilgan. Kreativni bossangiz, uning sahifasi ochiladi.</p>
-    <div class="yd-card" id="library">
-      <div class="yd-tools">
-        <h3>Kreativlar kutubxonasi: <span data-source="library_summary" data-field="total" data-row="0" class="dash-skeleton">—</span> ta fayl</h3>
-        <div class="yd-seg" id="yd-lib-filter" role="group" aria-label="Kutubxonani ajratish">
-          <button data-f="all" aria-pressed="true">Hammasi</button>
-          <button data-f="video" aria-pressed="false">Video</button>
-          <button data-f="image" aria-pressed="false">Rasm</button>
-          <button data-f="unused" aria-pressed="false">Ishlatilmagan rasm</button>
-        </div>
-      </div>
-      <p class="yd-note">Kabinetga yuklangan barcha video va rasmlar, o'chirilgan e'lonlardagilari ham. Yandex API ularning qaysi e'longa tegishli ekanini bermaydi, shuning uchun statistikasi yuqoridagi jadvalda.</p>
-      <div class="yd-scroll tall">
-        <table class="yd-table" id="yd-lib" data-source="library" data-row-key="id">
-          <thead><tr><th data-field="name">Fayl nomi</th><th data-field="kind">Turi</th><th data-field="used">E'longa biriktirilgan</th><th data-field="format" class="yd-hide-narrow">Format</th></tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
   </section>
 
   <section class="yd-panel" id="auditoriya" role="tabpanel" hidden>
@@ -1075,7 +1075,7 @@ dash.calc('insights', {
 
   // ---- Kreativlar kutubxonasi ----
   let libFilter = 'all';
-  const LIB_FILTERS = { all: () => true, video: (r) => r.kind === 'Video', image: (r) => r.kind === 'Rasm', unused: (r) => r.kind === 'Rasm' && r.used === 'Yo\'q' };
+  const LIB_FILTERS = { all: () => true, video: (r) => r.kind === 'Video', image: (r) => r.kind === 'Rasm' };
   document.getElementById('yd-lib-filter').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-f]'); if (!b) return;
     libFilter = b.dataset.f;
@@ -1090,19 +1090,15 @@ dash.calc('insights', {
     });
     const tb = document.querySelector('#yd-lib tbody'); tb.textContent = '';
     if (l.status !== 'ok') {
-      if (l.status === 'error') { const td = tb.insertRow().insertCell(); td.colSpan = 4; td.className = 'yd-note'; td.textContent = 'Yuklanmadi'; }
+      if (l.status === 'error') { const td = tb.insertRow().insertCell(); td.colSpan = 2; td.className = 'yd-note'; td.textContent = 'Yuklanmadi'; }
       return;
     }
     const rows = l.data.filter(LIB_FILTERS[libFilter]).sort((a, b) => a.kind.localeCompare(b.kind) || a.name.localeCompare(b.name));
     for (const r of rows) {
       const tr = tb.insertRow(); tr.dataset.key = r.id;
-      for (const c of ['name', 'kind', 'used', 'format']) {
-        const td = tr.insertCell(); td.textContent = r[c];
-        if (c === 'format') td.className = 'yd-hide-narrow';
-        if (c === 'used' && r.used === 'Yo\'q') td.classList.add('zero');
-      }
+      for (const c of ['name', 'kind']) { const td = tr.insertCell(); td.textContent = r[c]; }
     }
-    if (!rows.length) { const td = tb.insertRow().insertCell(); td.colSpan = 4; td.className = 'yd-note'; td.textContent = 'Ma\'lumot yo\'q.'; }
+    if (!rows.length) { const td = tb.insertRow().insertCell(); td.colSpan = 2; td.className = 'yd-note'; td.textContent = 'Ma\'lumot yo\'q.'; }
   }
 
   // ---- Har 10 daqiqada yangilash ----
