@@ -26,7 +26,7 @@ NUMERIC = {"Impressions", "Clicks", "Cost", "Conversions"}
 METRICS = ["Impressions", "Clicks", "Cost", "Conversions"]
 # Sahifadagi hisob-kitoblar shu ustun nomlarini kutadi (Direct'dagi nomlar bilan bir xil).
 REPORTS = {
-    "stats": ["Date", "CampaignId", "CampaignName"] + METRICS,
+    "stats": ["Date", "CampaignId", "CampaignName", "AdGroupId", "AdGroupName", "AdId"] + METRICS,
     "placements": ["Date", "Placement"] + METRICS,
     "audience": ["Date", "Age", "Gender"] + METRICS,
     "regions": ["Date", "LocationOfPresenceName"] + METRICS,
@@ -75,7 +75,7 @@ def get_report(token, login, name, fields):
         "ReportType": "CUSTOM_REPORT",
         "DateRangeType": "ALL_TIME",
         "Format": "TSV",
-        "IncludeVAT": "YES",
+        "IncludeVAT": "NO",  # kabinetdagi "Расход" kabi, QQS'siz
         "AttributionModels": ["LC"],
     }}
     headers = v5_headers(token, login)

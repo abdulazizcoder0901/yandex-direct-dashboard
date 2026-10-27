@@ -54,6 +54,7 @@ window.dash = (() => {
       const [key, a, b] = RANGES[id], rows = raw[key];
       return rows ? rows.filter(r => r.Date >= params[a] && r.Date <= params[b]) : undefined;
     }
+    if (id === 'lifetime') return raw.stats;
     if (id === 'metrika') {
       if (!raw.metrika) return undefined;
       const rows = raw.metrika.filter(r => r.date >= params.date_from && r.date <= params.date_to);
@@ -86,8 +87,14 @@ window.dash = (() => {
     setParams(p) { Object.assign(params, p); compute(); fire(); },
     resetParams() {},
     setLink() {},
+    // Sahifa har bir manba uchun chaqiradi; bu yerda hammasi bitta faylda, shuning uchun bir marta qayta o'qiladi
+    refresh() {
+      clearTimeout(this._reload);
+      this._reload = setTimeout(() => this.load(this._url).catch(() => {}), 2000);
+    },
     onData(fn) { listeners.push(fn); try { fn(); } catch (e) { console.error(e); } },
     load(url) {
+      this._url = url;
       return fetch(url, { cache: 'no-store' })
         .then(r => { if (!r.ok) throw new Error('data.json topilmadi (' + r.status + ')'); return r.json(); })
         .then(json => { raw = json; compute(); status = 'ok'; fire(); return json; })

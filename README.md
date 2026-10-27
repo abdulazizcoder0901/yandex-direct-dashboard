@@ -14,7 +14,9 @@ Davr filtrlari: Bugun, Kecha, 7 kun, 14 kun, 30 kun, Shu oy, O'tgan oy, oy tanlo
 - `scripts/fetch_data.py` Yandex Direct API'dan butun tarix bo'yicha kunlik statistikani (kampaniya, kanal, yosh va jins, hudud), balansni va Metrika ma'lumotini olib, `site/data.json` faylini yozadi. Faqat Python standart kutubxonasi kerak.
 - `src/dashboard.html` Claude ichidagi dashboard sahifasining aynan o'zi; `src/shell.html` uni oddiy sayt sifatida ishlatadi (ma'lumotni `data.json`'dan oladi va sana bo'yicha ajratadi).
 - `scripts/build_page.py` ikkalasini `site/index.html` ga yig'adi. `src/` dagi fayllarni o'zgartirsangiz, uni qayta ishga tushiring.
-- `.github/workflows/update.yml` har kuni soat 08:00 da (Toshkent vaqti) ma'lumotni yangilaydi va saytni GitHub Pages'ga joylaydi.
+- `.github/workflows/update.yml` har 10 daqiqada ma'lumotni yangilaydi va saytni GitHub Pages'ga joylaydi. Ochiq turgan sahifa ham har 10 daqiqada `data.json` ni qayta o'qiydi.
+
+**Actions daqiqalari:** har 10 daqiqada ishga tushish oyiga taxminan 4 300 daqiqa sarflaydi. Public repoda bu bepul, private repoda esa bepul limit (oyiga 2 000 daqiqa) yetmaydi. Private qilsangiz, `cron` ni `"*/30 * * * *"` ga o'zgartiring.
 
 `site/data.json` repoga yozilmaydi (`.gitignore`), ya'ni statistika Git tarixida saqlanmaydi.
 
@@ -53,9 +55,12 @@ So'ng brauzerda http://localhost:8000 ni oching.
 
 ## Hisoblash qoidalari
 
-- Xarajat QQS bilan, hisob valyutasida (UZS).
+- Rasxod QQS'siz, hisob valyutasida (UZS), tiyingacha: Direct kabinetidagi "Расход" bilan bir xil.
 - Konversiyalar Direct hisoblagan, kampaniyada tanlangan maqsadlar bo'yicha, oxirgi bosish (LC) atribusiya modelida.
-- CPA = xarajat ÷ konversiyalar, CTR = kliklar ÷ ko'rsatishlar, CPC = xarajat ÷ kliklar.
+- CPA = rasxod ÷ konversiyalar, CTR = kliklar ÷ ko'rsatishlar, CPC = rasxod ÷ kliklar, lid foizi = konversiyalar ÷ kliklar.
+- ROI = (konversiyalar × 420 000 so'm − rasxod) ÷ rasxod. 420 000 so'm Metrika'dagi "Forma yuborildi" maqsadining qiymati; Direct o'zi daromad yozmaydi.
+- Kampaniyalar tabida kampaniyani bossangiz, guruhlari (ads set), guruhni bossangiz, kreativlari ochiladi. Kreativlarning nomini API bermaydi, ular tartib raqami va ID oxiri bilan ko'rsatiladi.
+- Yoqilgan va o'chgan sana: butun muddatdagi birinchi va oxirgi ko'rsatish kuni.
 - Sanalar Toshkent vaqti bo'yicha. "7 kun", "14 kun", "30 kun" bugungi kunni ham o'z ichiga oladi. Solishtirish davri tanlangan davrdan oldingi xuddi shuncha kun.
 - Konversiyasiz kanal: tanlangan davrda pul sarflangan, lekin birorta konversiya bo'lmagan kanal.
 - Telegram reklamasi ko'pchilik ko'rsatishlar uchun yosh va jinsni bermaydi, Direct barcha ko'rsatishlarni "kompyuter" deb yozadi.
