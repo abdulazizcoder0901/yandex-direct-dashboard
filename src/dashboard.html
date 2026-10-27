@@ -115,6 +115,10 @@
 .yd-back { padding: 7px 14px; border-radius: 999px; }
 .yd-ent-head { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
 .yd-ent-head h2 { font-size: 20px; font-weight: 600; margin: 0; overflow-wrap: anywhere; }
+.yd-ent-title { flex-basis: 100%; order: 3; font-size: 15px; color: var(--color-fg); line-height: 1.5; }
+.yd-ent-title small { display: block; color: var(--color-fg-muted); font-size: 13px; }
+.yd-table td[title] { cursor: help; }
+.yd-table tr.yd-link td[title] { cursor: pointer; }
 .yd-chip { display: inline-block; font-size: 12px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--color-border-line); color: var(--color-fg-muted); white-space: nowrap; }
 .yd-chip.on { color: var(--color-ok); border-color: color-mix(in srgb, var(--color-ok) 40%, transparent); }
 .yd-dates { display: flex; flex-wrap: wrap; gap: 10px 24px; line-height: 1.5; font-size: 13px; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
@@ -267,6 +271,7 @@
       </div>
       <div class="yd-ent-head">
         <h2 id="yd-ent-name">—</h2>
+        <span class="yd-ent-title" id="yd-ent-title" hidden></span>
         <span class="yd-chip" id="yd-ent-status">—</span>
         <span class="yd-stat" id="yd-ent-kind">—</span>
       </div>
@@ -541,10 +546,9 @@ dash.calc('entities', {
     for (const t of ads) { seen[t.adgroup_id] = (seen[t.adgroup_id] || 0) + 1; t.ad_no = seen[t.adgroup_id]; }
     return all.map(t => {
       const cost = Math.round(t.cost * 100) / 100;
-      const name = t.level === 'campaign' ? t.campaign_name : t.level === 'adgroup' ? t.adgroup_name
-        : (t.title ? t.title + ' · …' + t.entity_id.slice(-4) : 'Kreativ ' + t.ad_no + ' · …' + t.entity_id.slice(-4));
+      const name = t.level === 'campaign' ? t.campaign_name : t.level === 'adgroup' ? t.adgroup_name : 'Kreativ ' + t.ad_no;
       const { days, ...rest } = t;
-      return { ...rest, name, cost, life_cost: Math.round(t.life_cost * 100) / 100,
+      return { ...rest, name, title: t.title || null, text: t.text || null, cost, life_cost: Math.round(t.life_cost * 100) / 100,
         active_days: days.size,
         status: !t.last_date ? 'Ko\'rsatilmagan' : t.last_date >= yesterday ? 'Faol' : 'To\'xtagan',
         ctr: t.impressions ? t.clicks / t.impressions : null,
@@ -1018,6 +1022,10 @@ dash.calc('insights', {
     table.addEventListener('keydown', (e) => { if (e.key === 'Enter') open(e.target.closest('tr.yd-link')); });
   }
 
+  // Sichqoncha ustiga borganda chiqadigan to'liq nom
+  const fullName = (r) => r.level !== 'ad' ? r.name + '\nID ' + r.entity_id
+    : (r.title ? r.title + (r.text ? '\n' + r.text : '') : 'Sarlavhasi hali qo\'shilmagan (Yandex API bermaydi)')
+      + '\nE\'lon № ' + r.entity_id + '\n' + r.campaign_name + ' › ' + r.adgroup_name;
   function fillEntityTable(tid, rows, cols = ENT_COLS) {
     const table = document.getElementById(tid), s = entSorts[tid];
     const hideNarrow = new Set([...table.querySelectorAll('th.yd-hide-narrow')].map(th => th.dataset.field));
@@ -1030,7 +1038,8 @@ dash.calc('insights', {
     const maxCost = d3.max(rows, r => r.cost) || 1;
     for (const r of rows) {
       const tr = tb.insertRow(); tr.dataset.key = r.id; tr.className = 'yd-link'; tr.tabIndex = 0;
-      tr.insertCell().textContent = r.name;
+      const nameCell = tr.insertCell(); nameCell.textContent = r.name;
+      nameCell.title = fullName(r);
       for (const c of cols) {
         const td = tr.insertCell();
         if (hideNarrow.has(c)) td.className = 'yd-hide-narrow';
@@ -1062,6 +1071,12 @@ dash.calc('insights', {
     const sel = chosen || all.find(r => r.level === 'campaign');
     if (!sel) { document.querySelectorAll('.yd-ent').forEach(el => { el.textContent = '—'; setState(el, e.status); }); return; }
     document.getElementById('yd-ent-name').textContent = sel.name;
+    const tEl = document.getElementById('yd-ent-title');
+    tEl.hidden = sel.level !== 'ad'; tEl.textContent = '';
+    if (sel.level === 'ad') {
+      tEl.append(sel.title || 'Sarlavhasi hali qo\'shilmagan');
+      if (sel.text) { const sm = document.createElement('small'); sm.textContent = sel.text; tEl.append(sm); }
+    }
     const st = document.getElementById('yd-ent-status');
     st.textContent = sel.status; st.classList.toggle('on', sel.status === 'Faol');
     document.getElementById('yd-ent-kind').textContent = LEVEL_NAME[sel.level] + ' · ID ' + sel.entity_id;
