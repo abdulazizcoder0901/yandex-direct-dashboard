@@ -193,10 +193,11 @@ window.dash = (() => {
 .yd-btn[aria-busy="true"] { opacity: .6; cursor: progress; }
 .yd-meta b.old { color: var(--yd-warn-dot); }
 /* Filtr va bo'limlar sahifa bilan birga ko'tariladi, tepaga yetganda qotadi */
-.yd-stick { position: sticky; top: 0; z-index: 12; display: flex; flex-direction: column; gap: 16px; background: var(--color-bg); margin-inline: -16px; padding: 10px 16px 0; transition: box-shadow .2s ease; }
+.yd-stick { position: sticky; top: 0; z-index: 12; display: flex; flex-direction: column; gap: 18px; background: var(--color-bg); margin-inline: -16px; padding: 10px 16px 0; transition: box-shadow .2s ease; }
 .yd-stick.stuck { box-shadow: 0 8px 18px rgba(0, 0, 0, .45); }
 .yd-stick-mark { height: 0; margin-bottom: -24px; }
-/* Telefon: oy va sana qatori tepada turadi va aylantirganda chiqib ketadi, davr tugmalari va bo'limlar qotadi */
+/* Telefon: sarlavha, oy va sana qatori aylantirganda chiqib ketadi, davr tugmalari va bo'limlar qotadi
+   (hammasi qotsa ekranning yarmidan ko'pini egallardi) */
 @media (max-width: 640px) { .yd-filters .yd-range-row { order: -1; } .yd-stick { gap: 6px; } }
 /* Telefon: tugmalar to'r bo'lib turadi, hammasi ekranda ko'rinadi (yon tomonga surilmaydi) */
 @media (max-width: 640px) {
@@ -327,6 +328,8 @@ window.dash = (() => {
 </style>
 
 <div class="yd">
+  <div class="yd-stick-mark" id="yd-stick-mark" aria-hidden="true"></div>
+  <div class="yd-stick" id="yd-stick">
   <header class="yd-head" id="summary">
     <div class="yd-head-row">
       <h1>Junior: Yandex Direct</h1>
@@ -342,9 +345,6 @@ window.dash = (() => {
       <span class="yd-hide-narrow">keyingi yangilanish <b id="yd-next">—</b></span>
     </div>
   </header>
-
-  <div class="yd-stick-mark" id="yd-stick-mark" aria-hidden="true"></div>
-  <div class="yd-stick" id="yd-stick">
   <div class="yd-filters" id="yd-filters" role="group" aria-label="Davr">
     <div class="yd-pills">
     <button class="yd-pill" data-preset="today">Bugun</button>
@@ -1010,11 +1010,17 @@ dash.calc('insights', {
     monthSel.replaceChildren(...opts);
   })();
 
-  // Qotgan blok: telefonda tepadagi oy va sana qatori chiqib ketadi (top manfiy), qolgani qotadi
+  // Qotgan blok: kompyuterda sarlavha, filtr va bo'limlar to'liq qotadi;
+  // telefonda sarlavha va oy/sana qatori chiqib ketadi (top manfiy), qolgani qotadi
   const stick = document.getElementById('yd-stick'), rangeRow = document.querySelector('#yd-filters .yd-range-row');
+  const head = document.getElementById('summary');
   const narrow = matchMedia('(max-width: 640px)');
-  const fitStick = () => { stick.style.top = narrow.matches ? -(rangeRow.offsetHeight + 10) + 'px' : '0px'; };
+  const fitStick = () => {
+    const gap = parseFloat(getComputedStyle(stick).rowGap) || 0;
+    stick.style.top = narrow.matches ? -(head.offsetHeight + gap + rangeRow.offsetHeight + 10) + 'px' : '0px';
+  };
   new ResizeObserver(fitStick).observe(rangeRow);
+  new ResizeObserver(fitStick).observe(head);
   narrow.addEventListener('change', fitStick);
   fitStick();
   // Qotganda pastki soya (blokning o'zi joyidan siljimaydi)
