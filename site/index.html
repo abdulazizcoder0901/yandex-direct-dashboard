@@ -142,12 +142,22 @@ window.dash = (() => {
 .yd-filters { display: flex; flex-direction: column; gap: 10px; }
 .yd-pills { display: flex; flex-wrap: wrap; gap: 8px; }
 .yd-range-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+/* Telefon: tugmalar to'r bo'lib turadi, hammasi ekranda ko'rinadi (yon tomonga surilmaydi) */
 @media (max-width: 640px) {
-  .yd-pills { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -16px; padding-inline: 16px; }
-  .yd-pills::-webkit-scrollbar { display: none; }
-  .yd-range-row .yd-date { flex: 1 1 8rem; min-width: 0; }
-  .yd-range-row .yd-select { flex: 1 1 100%; }
+  /* 12 ustun: 1-qatorda 4 ta, 2-qatorda 3 ta tugma, bo'sh joy qolmaydi */
+  .yd-pills { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 6px; }
+  .yd-pills .yd-pill { grid-column: span 3; padding: 8px 4px; text-align: center; overflow: hidden; text-overflow: ellipsis; }
+  .yd-pills .yd-pill:nth-child(n+5) { grid-column: span 4; }
+  .yd-pills .yd-pill.dashed { grid-column: 1 / -1; }
+  .yd-range-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 8px; }
+  .yd-range-row .yd-select, .yd-range-row .yd-btn { grid-column: 1 / -1; }
+  .yd-range-row .yd-date { width: 100%; min-width: 0; }
   .yd-head h1 { font-size: 19px; }
+}
+/* Juda tor ekran: 3 tadan, oxirgi qatorda "O'tgan oy" va solishtirish tugmasi yonma-yon */
+@media (max-width: 360px) {
+  .yd-pills .yd-pill, .yd-pills .yd-pill:nth-child(n+5) { grid-column: span 4; }
+  .yd-pills .yd-pill.dashed { grid-column: span 8; }
 }
 .yd-seg { display: inline-flex; flex-wrap: wrap; gap: 6px; }
 .yd-seg button { font: inherit; font-size: 13px; color: var(--color-fg-muted); background: var(--color-bg); border: 1px solid var(--color-border-line); border-radius: 999px; padding: 5px 12px; cursor: pointer; white-space: nowrap; }
