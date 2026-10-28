@@ -35,6 +35,7 @@
 .yd-range-row .yd-btn { flex: 0 1 12rem; }
 .yd-date.on { border-color: var(--yd-accent); box-shadow: inset 0 0 0 1px var(--yd-accent); }
 .yd-btn[aria-busy="true"] { opacity: .6; cursor: progress; }
+.yd-meta b.old { color: var(--yd-warn-dot); }
 /* Telefon: tugmalar to'r bo'lib turadi, hammasi ekranda ko'rinadi (yon tomonga surilmaydi) */
 @media (max-width: 640px) {
   /* 12 ustun: 1-qatorda 4 ta, 2-qatorda 3 ta tugma, bo'sh joy qolmaydi */
@@ -171,7 +172,8 @@
     </div>
     <div class="yd-meta">
       <span><b id="yd-range-text">—</b></span>
-      <span>yangilandi <b id="yd-updated">—</b></span>
+      <span title="Ma'lumot Yandex'dan oxirgi marta olingan vaqt (Toshkent)">ma'lumot <b id="yd-data-time">—</b></span>
+      <span title="Sahifa ma'lumotni oxirgi marta qayta o'qigan vaqt">sahifa yangilandi <b id="yd-updated">—</b></span>
       <span>solishtirish <b id="yd-cmp-text">—</b></span>
       <span><span class="yd-dot" id="yd-metrika-dot"></span>Metrika <b data-source="metrika" data-field="visits" data-row="0" class="dash-skeleton">—</b> tashrif</span>
       <span>balans <b data-source="balance" data-field="amount" data-row="0" class="dash-skeleton">—</b></span>
@@ -783,17 +785,22 @@ dash.calc('insights', {
     return null;
   }
   function cmpFor(from, to, mode) {
-    if (mode === 'month') return [minusMonth(from), minusMonth(to)];
+    // O'tgan oyning o'sha sanalari; oy oxirigacha tanlangan bo'lsa, o'tgan oy ham oxirigacha (1–30-sen ↔ 1–31-avg)
+    if (mode === 'month') return [minusMonth(from), to === monthEnd(to) ? monthEnd(minusMonth(to)) : minusMonth(to)];
     const n = days(from, to);
     return [shift(from, -n), shift(from, -1)];
   }
-  function apply(from, to, preset, mode) {
+  // Oy bo'yicha tanlovlar (Shu oy, O'tgan oy, Oyni tanlang) o'tgan oyning 1-sanasidan solishtiriladi,
+  // qolganlari (Bugun, 7 kun...) undan oldingi xuddi shuncha kun bilan
+  const defMode = (preset) => preset === 'this_month' || preset === 'last_month' || String(preset).startsWith('month:') ? 'month' : 'prev';
+  // manual: solishtirish tugmasi bilan qo'lda tanlangan rejim (keyingi ochilishda ham saqlanadi)
+  function apply(from, to, preset, mode, manual = false) {
     if (!isDate(from) || !isDate(to)) return;
     if (from > to) [from, to] = [to, from];
-    const m = mode || dash.params().cmp_mode || 'prev';
+    const m = mode || defMode(preset);
     const [cf, ct] = cmpFor(from, to, m);
     dash.setParams({ date_from: from, date_to: to, cmp_from: cf, cmp_to: ct, preset, cmp_mode: m });
-    saveView({ preset, from, to, cmp: m });
+    saveView({ preset, from, to, cmp: m, cmpManual: manual });
   }
   // Oxirgi tanlangan filtr va bo'lim shu brauzerda saqlanadi (sahifa yangilansa ham qoladi)
   const STORE = 'yd-view';
@@ -810,9 +817,10 @@ dash.calc('insights', {
   // Sahifa ochilganda: oxirgi tanlov (nisbiy davr bugungi sanaga suriladi), bo'lmasa shu oy
   const setDefaults = () => {
     const v = loadView(), r = v.preset && v.preset !== 'custom' ? rangeFor(v.preset) : null;
-    if (r) apply(r[0], r[1], v.preset, v.cmp);
-    else if (v.preset === 'custom' && isDate(v.from) && isDate(v.to)) apply(v.from, v.to, 'custom', v.cmp);
-    else { const [f, t] = rangeFor('this_month'); apply(f, t, 'this_month', 'prev'); }
+    const cmp = v.cmpManual ? v.cmp : undefined;
+    if (r) apply(r[0], r[1], v.preset, cmp, !!v.cmpManual);
+    else if (v.preset === 'custom' && isDate(v.from) && isDate(v.to)) apply(v.from, v.to, 'custom', cmp, !!v.cmpManual);
+    else { const [f, t] = rangeFor('this_month'); apply(f, t, 'this_month'); }
   };
   setDefaults();
 
@@ -836,7 +844,7 @@ dash.calc('insights', {
   });
   document.getElementById('yd-cmp-month').addEventListener('click', () => {
     const p = dash.params();
-    apply(p.date_from, p.date_to, p.preset, p.cmp_mode === 'month' ? 'prev' : 'month');
+    apply(p.date_from, p.date_to, p.preset, p.cmp_mode === 'month' ? 'prev' : 'month', true);
   });
   monthSel.addEventListener('change', () => {
     if (!monthSel.value) return;
@@ -1307,7 +1315,7 @@ dash.calc('insights', {
     // Nisbiy davr (Bugun, 7 kun, Shu oy...) kun almashganda yangi sanaga suriladi
     const p = dash.params();
     const r = p.preset && p.preset !== 'custom' ? rangeFor(p.preset) : null;
-    if (r && (r[0] !== p.date_from || r[1] !== p.date_to)) apply(r[0], r[1], p.preset);
+    if (r && (r[0] !== p.date_from || r[1] !== p.date_to)) apply(r[0], r[1], p.preset, p.cmp_mode, !!loadView().cmpManual);
     // Saytda hamma ma'lumot bitta faylda: bir marta qayta o'qiladi.
     // Claude ichida esa Yandex 10 soniyada 10 tadan ko'p so'rovni kechiktiradi: so'rovlar orasida 1,5 soniya
     if (dash.reload) dash.reload();

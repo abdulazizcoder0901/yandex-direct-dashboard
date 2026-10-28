@@ -174,7 +174,24 @@ dash.onProgress(({ done, pct }) => {
   clearTimeout(loading._t);
   if (done) loading._t = setTimeout(() => { loading.hidden = true; }, 400); else loading.hidden = false;
 });
+// Ma'lumot qachon olingani: "28-okt 02:10 · 13 soat oldin"; 1 soatdan eski bo'lsa sariq
+const MON = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
+let dataTime = null;
+const showDataTime = () => {
+  const el = document.getElementById('yd-data-time');
+  if (!el || !dataTime) return;
+  const t = new Date(dataTime.getTime() + 5 * 3600 * 1000);   // Toshkent vaqti (UTC+5)
+  const now = new Date(Date.now() + 5 * 3600 * 1000);
+  const hm = String(t.getUTCHours()).padStart(2, '0') + ':' + String(t.getUTCMinutes()).padStart(2, '0');
+  const sameDay = t.toISOString().slice(0, 10) === now.toISOString().slice(0, 10);
+  const min = Math.max(0, Math.round((Date.now() - dataTime) / 60000));
+  const ago = min < 1 ? 'hozirgina' : min < 60 ? min + ' daqiqa oldin' : min < 48 * 60 ? Math.floor(min / 60) + ' soat oldin' : Math.floor(min / 1440) + ' kun oldin';
+  el.textContent = (sameDay ? '' : t.getUTCDate() + '-' + MON[t.getUTCMonth()] + ' ') + hm + ' · ' + ago;
+  el.classList.toggle('old', min > 60);
+};
+setInterval(showDataTime, 60000);
 dash.onLoaded(d => {
+  dataTime = new Date(d.updated); showDataTime();
   document.getElementById('yd-banner').hidden = true;
   const upd = new Date(d.updated).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' });
   document.getElementById('yd-foot').textContent = 'Hisob: ' + d.login + ' · Valyuta: ' + d.currency + ' · Ma\'lumot yangilangan: ' + upd + ' (Toshkent vaqti)';
