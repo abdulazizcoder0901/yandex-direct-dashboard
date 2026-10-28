@@ -842,9 +842,9 @@ dash.calc('insights', {
   const MONTHS = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
   const MONTHS_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
   const day = (s) => { const d = new Date(s + 'T00:00:00Z'); return d.getUTCDate() + '-' + MONTHS[d.getUTCMonth()]; };
-  const grp = (v) => d3.format(',')(v).replace(/,/g, ' ');
+  const grp = (v) => d3.format(',')(v).replace(/,/g, ' ');
   // Summalar tiyingacha aniq: 721 435,30 so'm
-  const som = (v) => v == null ? '—' : d3.format(',.2f')(v).replace(/,/g, ' ').replace('.', ',') + ' so\'m';
+  const som = (v) => v == null ? '—' : d3.format(',.2f')(v).replace(/,/g, ' ').replace('.', ',') + ' so\'m';
   const roiFmt = (v) => v == null ? '—' : (v > 0 ? '+' : v < 0 ? '−' : '') + d3.format('.0%')(Math.abs(v));
   const count = (v) => v == null ? '—' : grp(Math.round(v));
   const pct = (v) => v == null ? '—' : d3.format('.2%')(v);
