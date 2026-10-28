@@ -27,8 +27,14 @@
 .yd-meta > span { white-space: nowrap; }
 .yd-meta b { color: var(--color-fg); font-weight: 600; }
 .yd-filters { display: flex; flex-direction: column; gap: 10px; }
+/* Katta ekranda tugmalar butun qatorni teng egallaydi */
 .yd-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+.yd-pills .yd-pill { flex: 1 1 auto; text-align: center; }
 .yd-range-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.yd-range-row .yd-select, .yd-range-row .yd-date { flex: 1 1 10rem; min-width: 0; }
+.yd-range-row .yd-btn { flex: 0 1 12rem; }
+.yd-date.on { border-color: var(--yd-accent); box-shadow: inset 0 0 0 1px var(--yd-accent); }
+.yd-btn[aria-busy="true"] { opacity: .6; cursor: progress; }
 /* Telefon: tugmalar to'r bo'lib turadi, hammasi ekranda ko'rinadi (yon tomonga surilmaydi) */
 @media (max-width: 640px) {
   /* 12 ustun: 1-qatorda 4 ta, 2-qatorda 3 ta tugma, bo'sh joy qolmaydi */
@@ -161,10 +167,11 @@
   <header class="yd-head" id="summary">
     <div class="yd-head-row">
       <h1>Junior: Yandex Direct</h1>
-      <button class="yd-btn small" id="yd-refresh" title="Hozir yangilash">↻ <span id="yd-updated">—</span></button>
+      <button class="yd-btn small" id="yd-refresh" title="Ma'lumotni hozir qayta yuklash">↻ Yangilash</button>
     </div>
     <div class="yd-meta">
       <span><b id="yd-range-text">—</b></span>
+      <span>yangilandi <b id="yd-updated">—</b></span>
       <span>solishtirish <b id="yd-cmp-text">—</b></span>
       <span><span class="yd-dot" id="yd-metrika-dot"></span>Metrika <b data-source="metrika" data-field="visits" data-row="0" class="dash-skeleton">—</b> tashrif</span>
       <span>balans <b data-source="balance" data-field="amount" data-row="0" class="dash-skeleton">—</b></span>
@@ -786,9 +793,27 @@ dash.calc('insights', {
     const m = mode || dash.params().cmp_mode || 'prev';
     const [cf, ct] = cmpFor(from, to, m);
     dash.setParams({ date_from: from, date_to: to, cmp_from: cf, cmp_to: ct, preset, cmp_mode: m });
+    saveView({ preset, from, to, cmp: m });
   }
-  // Sahifa ochilganda: shu oy
-  const setDefaults = () => { const [f, t] = rangeFor('this_month'); apply(f, t, 'this_month', 'prev'); };
+  // Oxirgi tanlangan filtr va bo'lim shu brauzerda saqlanadi (sahifa yangilansa ham qoladi)
+  const STORE = 'yd-view';
+  const loadView = () => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { return {}; } };
+  const saveView = (patch) => { try { localStorage.setItem(STORE, JSON.stringify({ ...loadView(), ...patch })); } catch (e) {} };
+  // Kiritilgan sanalar biror tugmaga to'g'ri kelsa, o'sha tugma tanlangan bo'lib qoladi
+  const PRESETS = ['today', 'yesterday', '7', '14', '30', 'this_month', 'last_month'];
+  const presetFor = (from, to) => {
+    const hit = PRESETS.find(p => { const r = rangeFor(p); return r[0] === from && r[1] === to; });
+    if (hit) return hit;
+    const m = 'month:' + from.slice(0, 7), r = rangeFor(m);
+    return r && r[0] === from && r[1] === to ? m : 'custom';
+  };
+  // Sahifa ochilganda: oxirgi tanlov (nisbiy davr bugungi sanaga suriladi), bo'lmasa shu oy
+  const setDefaults = () => {
+    const v = loadView(), r = v.preset && v.preset !== 'custom' ? rangeFor(v.preset) : null;
+    if (r) apply(r[0], r[1], v.preset, v.cmp);
+    else if (v.preset === 'custom' && isDate(v.from) && isDate(v.to)) apply(v.from, v.to, 'custom', v.cmp);
+    else { const [f, t] = rangeFor('this_month'); apply(f, t, 'this_month', 'prev'); }
+  };
   setDefaults();
 
   // Oy tanlovi: hisob ochilgan oydan (2026-mart) shu oygacha
@@ -819,7 +844,9 @@ dash.calc('insights', {
   });
   const fromIn = document.getElementById('yd-from'), toIn = document.getElementById('yd-to');
   document.getElementById('yd-apply').addEventListener('click', () => {
-    if (fromIn.validity.valid && toIn.validity.valid) apply(fromIn.value, toIn.value, 'custom');
+    if (!fromIn.validity.valid || !toIn.validity.valid || !isDate(fromIn.value) || !isDate(toIn.value)) return;
+    const [f, t] = fromIn.value <= toIn.value ? [fromIn.value, toIn.value] : [toIn.value, fromIn.value];
+    apply(f, t, presetFor(f, t));
   });
 
   // Tablar
@@ -830,6 +857,7 @@ dash.calc('insights', {
     document.querySelectorAll('.yd-tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
     document.querySelectorAll('.yd-panel').forEach(p => { p.hidden = p.id !== name; });
     if (link) dash.setLink(name);
+    saveView({ tab: name });
     render();
   };
   document.querySelectorAll('.yd-tab').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab, true)));
@@ -955,6 +983,8 @@ dash.calc('insights', {
     monthSel.classList.toggle('idle', !isMonth);
     if (fromIn !== document.activeElement) fromIn.value = p.date_from || '';
     if (toIn !== document.activeElement) toIn.value = p.date_to || '';
+    // Qo'lda kiritilgan davr: sana maydonlari ajratib ko'rsatiladi
+    fromIn.classList.toggle('on', p.preset === 'custom'); toIn.classList.toggle('on', p.preset === 'custom');
     const cmpRange = isDate(p.cmp_from) ? span(p.cmp_from, p.cmp_to) : '—';
     document.getElementById('yd-cmp-text').textContent = cmpRange;
     document.getElementById('yd-range-text').textContent = isDate(p.date_from) ? span(p.date_from, p.date_to) : '—';
@@ -1278,8 +1308,10 @@ dash.calc('insights', {
     const p = dash.params();
     const r = p.preset && p.preset !== 'custom' ? rangeFor(p.preset) : null;
     if (r && (r[0] !== p.date_from || r[1] !== p.date_to)) apply(r[0], r[1], p.preset);
-    // Yandex 10 soniyada 10 tadan ko'p so'rovni kechiktiradi: so'rovlar orasida 1,5 soniya
-    QUERIES.forEach((id, i) => setTimeout(() => dash.refresh(id), i * 1500));
+    // Saytda hamma ma'lumot bitta faylda: bir marta qayta o'qiladi.
+    // Claude ichida esa Yandex 10 soniyada 10 tadan ko'p so'rovni kechiktiradi: so'rovlar orasida 1,5 soniya
+    if (dash.reload) dash.reload();
+    else QUERIES.forEach((id, i) => setTimeout(() => dash.refresh(id), i * 1500));
     nextAt = Date.now() + EVERY;
     stamp();
   };
@@ -1288,7 +1320,8 @@ dash.calc('insights', {
   stamp();
 
   dash.onData(render);
-  const named = location.hash.slice(1);
+  // Havoladagi #bo'lim ustun, bo'lmasa oxirgi ochilgan bo'lim
+  const named = location.hash.slice(1) || loadView().tab;
   if (named) showTab(named, false);
 })();
 </script>

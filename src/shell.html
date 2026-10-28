@@ -31,6 +31,12 @@ body { margin: 0; color: #e8eaf0; font: 14px/1.5 var(--font-anthropic-sans); }
 .yd .dash-skeleton { color: transparent !important; background: #1f232d; border-radius: 4px; }
 .yd-banner { background: #151821; border: 1px solid #262a35; border-radius: 10px; padding: 14px 18px; margin: 16px; color: #ff6b6b; }
 .yd-foot { margin: 0; padding: 0 16px 24px; font-size: 12px; color: #8b92a3; }
+/* Yuklanish: tepada ingichka chiziq va foiz */
+.yd-loading { position: fixed; top: 0; left: 0; right: 0; z-index: 20; display: flex; align-items: center; gap: 12px; padding: 10px 16px; background: rgba(13, 15, 20, .92); backdrop-filter: blur(6px); font-size: 13px; color: #8b92a3; font-variant-numeric: tabular-nums; }
+.yd-loading[hidden] { display: none; }
+.yd-loading .bar { flex: 1; height: 4px; border-radius: 2px; background: #1f232d; overflow: hidden; }
+.yd-loading .bar i { display: block; height: 100%; width: 0; background: #4c8dff; border-radius: 2px; transition: width .2s ease; }
+.yd-loading b { color: #e8eaf0; font-weight: 600; min-width: 3.2em; text-align: right; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script>
@@ -87,28 +93,65 @@ window.dash = (() => {
     setParams(p) { Object.assign(params, p); compute(); fire(); },
     resetParams() {},
     setLink() {},
-    // Sahifa har bir manba uchun chaqiradi; bu yerda hammasi bitta faylda, shuning uchun bir marta qayta o'qiladi
+    // Sahifa har bir manba uchun ketma-ket chaqiradi; bu yerda hammasi bitta faylda,
+    // shuning uchun birinchi chaqiruvda darhol o'qiladi, keyingi 20 soniyadagilari e'tiborsiz qoladi
     refresh() {
-      clearTimeout(this._reload);
-      this._reload = setTimeout(() => this.load(this._url).catch(() => {}), 2000);
+      if (this._busy || Date.now() - (this._last || 0) < 20000) return;
+      this._last = Date.now();
+      this.load(this._url).catch(() => {});
     },
+    // "Yangilash" tugmasi: darhol qayta o'qiydi (yuklanayotgan bo'lsa kutadi)
+    reload() { if (!this._busy) this.load(this._url).catch(() => {}); },
     onData(fn) { listeners.push(fn); try { fn(); } catch (e) { console.error(e); } },
+    onLoaded(fn) { this._loaded = (this._loaded || []).concat(fn); },
+    // Yuklanish foizi: { done, pct } (pct 0..100)
+    onProgress(fn) { this._progress = (this._progress || []).concat(fn); },
+    _report(p) { (this._progress || []).forEach(fn => { try { fn(p); } catch (e) { console.error(e); } }); },
     // Bir nechta manzil: birinchisi ochilmasa, keyingisi sinab ko'riladi
     load(urls) {
-      this._url = urls;
+      this._url = urls; this._busy = true; this._last = Date.now();
+      this._report({ done: false, pct: 0 });
       const list = Array.isArray(urls) ? urls : [urls];
+      // Siqilgan javobda Content-Length haqiqiy hajmdan kichik: shunda oxirgi marta yuklangan hajm olinadi
+      let known = 0; try { known = +localStorage.getItem('yd-size') || 0; } catch (e) {}
+      const read = async (r) => {
+        if (!r.ok) throw new Error('data.json topilmadi (' + r.status + ')');
+        const header = +r.headers.get('content-length') || 0;
+        if (!r.body || !r.body.getReader) return r.json();
+        const reader = r.body.getReader(), parts = [];
+        let got = 0;
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          parts.push(value); got += value.length;
+          const total = got <= header ? header : Math.max(known, got * 1.1);
+          this._report({ done: false, pct: Math.min(99, Math.round(got / (total || got * 2) * 100)) });
+        }
+        try { localStorage.setItem('yd-size', String(got)); } catch (e) {}
+        const buf = new Uint8Array(got); let off = 0;
+        for (const p of parts) { buf.set(p, off); off += p.length; }
+        return JSON.parse(new TextDecoder().decode(buf));
+      };
       const attempt = (i) => fetch(list[i] + (list[i].includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' })
-        .then(r => { if (!r.ok) throw new Error('data.json topilmadi (' + r.status + ')'); return r.json(); })
+        .then(read)
         .catch(err => { if (i + 1 < list.length) return attempt(i + 1); throw err; });
       return attempt(0)
-        .then(json => { raw = json; compute(); status = 'ok'; fire(); return json; })
-        .catch(err => { status = 'error'; message = err.message; fire(); throw err; });
+        .then(json => {
+          raw = json; compute(); status = 'ok'; fire();
+          (this._loaded || []).forEach(fn => { try { fn(json); } catch (e) { console.error(e); } });
+          return json;
+        })
+        .catch(err => { status = 'error'; message = err.message; fire(); throw err; })
+        .finally(() => { this._busy = false; this._report({ done: true, pct: 100 }); });
     }
   };
 })();
 </script>
 </head>
 <body>
+<div class="yd-loading" id="yd-loading" role="progressbar" aria-label="Ma'lumot yuklanmoqda" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+  <span>Ma'lumot yuklanmoqda</span><div class="bar"><i></i></div><b>0%</b>
+</div>
 <div id="dash-root">
 <div class="yd-banner" id="yd-banner" hidden></div>
 <!-- DASHBOARD -->
@@ -120,10 +163,23 @@ const DATA_URLS = [
   'https://raw.githubusercontent.com/abdulazizcoder0901/yandex-direct-dashboard/data/data.json',
   'data.json'
 ];
-dash.load(DATA_URLS).then(d => {
+const loading = document.getElementById('yd-loading');
+dash.onProgress(({ done, pct }) => {
+  loading.querySelector('i').style.width = pct + '%';
+  loading.querySelector('b').textContent = pct + '%';
+  loading.setAttribute('aria-valuenow', String(pct));
+  const btn = document.getElementById('yd-refresh');
+  if (btn) { btn.disabled = !done; btn.setAttribute('aria-busy', String(!done)); }
+  // 100% bir lahza ko'rinib tursin
+  clearTimeout(loading._t);
+  if (done) loading._t = setTimeout(() => { loading.hidden = true; }, 400); else loading.hidden = false;
+});
+dash.onLoaded(d => {
+  document.getElementById('yd-banner').hidden = true;
   const upd = new Date(d.updated).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' });
   document.getElementById('yd-foot').textContent = 'Hisob: ' + d.login + ' · Valyuta: ' + d.currency + ' · Ma\'lumot yangilangan: ' + upd + ' (Toshkent vaqti)';
-}).catch(err => {
+});
+dash.load(DATA_URLS).catch(err => {
   const b = document.getElementById('yd-banner');
   b.hidden = false;
   b.textContent = 'Ma\'lumot yuklanmadi: ' + err.message + '. GitHub Actions\'da "Ma\'lumotni yangilash" ishlaganini tekshiring (README\'ga qarang).';
