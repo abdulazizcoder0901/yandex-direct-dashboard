@@ -51,6 +51,16 @@ So'ng brauzerda http://localhost:8000 ni oching.
 2. **Actions → Ma'lumotni yangilash → Run workflow** bilan birinchi marta qo'lda ishga tushiring. Tugagach, repoda `data` branchi paydo bo'ladi.
 3. Netlify'da: **Add new site → Import an existing project → GitHub** → `yandex-direct-dashboard` reposini tanlang. Sozlamalar `netlify.toml` dan o'zi olinadi (Publish directory: `site`). **Deploy** ni bosing.
 
+4. Har 15 daqiqalik yangilash va "↻ Yangilash" tugmasi uchun (GitHub o'z jadvalini soatlab kechiktiradi,
+   shuning uchun jadvalni Netlify yuritadi):
+   - GitHub'da fine-grained token yarating: **Settings → Developer settings → Fine-grained tokens → Generate new token**;
+     Repository access: **Only select repositories → yandex-direct-dashboard**; Permissions → **Actions: Read and write**.
+   - Netlify'da: **Project configuration → Environment variables → Add a variable**: `GH_ACTIONS_TOKEN` = shu token.
+   - **Deploys → Trigger deploy** bilan qayta deploy qiling (o'zgaruvchi funksiyalarga shundan keyin yetib boradi).
+
+   Shundan keyin `netlify/functions/scheduled-refresh.mjs` har 15 daqiqada, `netlify/functions/refresh.mjs`
+   esa tugma bosilganda GitHub'dagi "Ma'lumotni yangilash"ni ishga tushiradi.
+
 **Muhim:** Netlify sayti internetda ochiq bo'ladi: manzilni bilgan har kim statistikani ko'ra oladi. Parol bilan yopish Netlify'ning pullik rejalarida bor.
 
 ## Hisoblash qoidalari

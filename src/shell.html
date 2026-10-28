@@ -40,6 +40,7 @@ body { margin: 0; color: #e8eaf0; font: 14px/1.5 var(--font-anthropic-sans); }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script>
+const REPO = 'abdulazizcoder0901/yandex-direct-dashboard';
 // Claude dashboard API'sining kichik o'rnini bosuvchisi: ma'lumot data.json'dan olinadi,
 // Claude'da so'rov qiladigan sana filtrlari bu yerda saqlangan qatorlarni sana bo'yicha ajratadi.
 window.dash = (() => {
@@ -100,8 +101,51 @@ window.dash = (() => {
       this._last = Date.now();
       this.load(this._url).catch(() => {});
     },
-    // "Yangilash" tugmasi: darhol qayta o'qiydi (yuklanayotgan bo'lsa kutadi)
+    // Qayta o'qish (yuklanayotgan bo'lsa kutadi)
     reload() { if (!this._busy) this.load(this._url).catch(() => {}); },
+    // "Yangilash" tugmasi: sayt serveri GitHub'dagi "Ma'lumotni yangilash"ni ishga tushiradi (u Yandex'dan oladi),
+    // sahifa yangi ma'lumot yozilguncha kutadi. Server sozlanmagan bo'lsa, oxirgi ma'lumot qayta o'qiladi.
+    async requestFresh() {
+      if (this._busy) return;
+      let res = null;
+      try { const r = await fetch('/api/refresh', { method: 'POST' }); res = r.ok ? await r.json() : null; } catch (e) {}
+      if (!res || !(res.started || res.running)) { this.reload(); return res; }
+      this._busy = true;
+      const was = this._sha, t0 = Date.now(), LIMIT = 5 * 60 * 1000, TYPICAL = 90 * 1000;
+      let failure = null;
+      const tick = setInterval(() => this._report({ done: false, pct: Math.min(95, Math.round((Date.now() - t0) / TYPICAL * 100)), label: 'Yandex\'dan so\'ralmoqda' }), 1000);
+      try {
+        for (;;) {
+          await new Promise(r => setTimeout(r, 10000));
+          const sha = await this._latestSha();
+          if (sha && sha !== was) break;
+          const run = await this._lastRun();
+          if (run && run.status === 'completed' && run.conclusion !== 'success' && Date.parse(run.created_at) >= t0 - 60000) {
+            throw new Error('Yandex\'dan olishda xato (GitHub Actions)');
+          }
+          if (Date.now() - t0 > LIMIT) throw new Error('Yandex javobi kechikdi');
+        }
+      } catch (e) { failure = e; }
+      finally { clearInterval(tick); this._busy = false; }
+      // Avval oxirgi ma'lumot qayta o'qiladi, keyin xato haqida yoziladi (o'qish eski yozuvni yashiradi)
+      await this.load(this._url).catch(() => {});
+      if (failure) (this._failed || []).forEach(fn => fn(failure));
+    },
+    onFailed(fn) { this._failed = (this._failed || []).concat(fn); },
+    // "data" branchining oxirgi commit SHA'si: raw manzil SHA bilan so'ralsa GitHub keshi (5 daqiqa) chetlab o'tiladi
+    async _latestSha() {
+      try {
+        const r = await fetch('https://api.github.com/repos/' + REPO + '/commits/data', { headers: { Accept: 'application/vnd.github.sha' }, cache: 'no-store' });
+        const t = r.ok ? (await r.text()).trim() : '';
+        return /^[0-9a-f]{40}$/.test(t) ? t : null;
+      } catch (e) { return null; }
+    },
+    async _lastRun() {
+      try {
+        const r = await fetch('https://api.github.com/repos/' + REPO + '/actions/workflows/update.yml/runs?per_page=1', { cache: 'no-store' });
+        return r.ok ? ((await r.json()).workflow_runs || [])[0] : null;
+      } catch (e) { return null; }
+    },
     onData(fn) { listeners.push(fn); try { fn(); } catch (e) { console.error(e); } },
     onLoaded(fn) { this._loaded = (this._loaded || []).concat(fn); },
     // Yuklanish foizi: { done, pct } (pct 0..100)
@@ -111,7 +155,9 @@ window.dash = (() => {
     load(urls) {
       this._url = urls; this._busy = true; this._last = Date.now();
       this._report({ done: false, pct: 0 });
-      const list = Array.isArray(urls) ? urls : [urls];
+      return Promise.resolve(typeof urls === 'function' ? urls() : urls).then(u => this._fetch(Array.isArray(u) ? u : [u]));
+    },
+    _fetch(list) {
       // Siqilgan javobda Content-Length haqiqiy hajmdan kichik: shunda oxirgi marta yuklangan hajm olinadi
       let known = 0; try { known = +localStorage.getItem('yd-size') || 0; } catch (e) {}
       const read = async (r) => {
@@ -150,7 +196,7 @@ window.dash = (() => {
 </head>
 <body>
 <div class="yd-loading" id="yd-loading" role="progressbar" aria-label="Ma'lumot yuklanmoqda" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-  <span>Ma'lumot yuklanmoqda</span><div class="bar"><i></i></div><b>0%</b>
+  <span id="yd-loading-label">Ma'lumot yuklanmoqda</span><div class="bar"><i></i></div><b>0%</b>
 </div>
 <div id="dash-root">
 <div class="yd-banner" id="yd-banner" hidden></div>
@@ -158,13 +204,20 @@ window.dash = (() => {
 <p class="yd-foot" id="yd-foot"></p>
 </div>
 <script>
-// Ma'lumot GitHub'dagi "data" branchidan (har 10 daqiqada yangilanadi); kompyuterda sinash uchun yonidagi data.json
-const DATA_URLS = [
-  'https://raw.githubusercontent.com/abdulazizcoder0901/yandex-direct-dashboard/data/data.json',
-  'data.json'
-];
+// Ma'lumot GitHub'dagi "data" branchidan (har 15 daqiqada yangilanadi); kompyuterda sinash uchun yonidagi data.json.
+// Avval oxirgi commit SHA'si olinadi: branch manzili 5 daqiqagacha keshlanadi, SHA manzili esa doim yangi.
+const DATA_URLS = async () => {
+  const sha = await dash._latestSha();
+  if (sha) dash._sha = sha;
+  return [
+    ...(sha ? ['https://raw.githubusercontent.com/' + REPO + '/' + sha + '/data.json'] : []),
+    'https://raw.githubusercontent.com/' + REPO + '/data/data.json',
+    'data.json'
+  ];
+};
 const loading = document.getElementById('yd-loading');
-dash.onProgress(({ done, pct }) => {
+dash.onProgress(({ done, pct, label }) => {
+  document.getElementById('yd-loading-label').textContent = label || 'Ma\'lumot yuklanmoqda';
   loading.querySelector('i').style.width = pct + '%';
   loading.querySelector('b').textContent = pct + '%';
   loading.setAttribute('aria-valuenow', String(pct));
@@ -195,6 +248,11 @@ dash.onLoaded(d => {
   document.getElementById('yd-banner').hidden = true;
   const upd = new Date(d.updated).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' });
   document.getElementById('yd-foot').textContent = 'Hisob: ' + d.login + ' · Valyuta: ' + d.currency + ' · Ma\'lumot yangilangan: ' + upd + ' (Toshkent vaqti)';
+});
+dash.onFailed(err => {
+  const b = document.getElementById('yd-banner');
+  b.hidden = false;
+  b.textContent = err.message + '. Oxirgi saqlangan ma\'lumot ko\'rsatilmoqda.';
 });
 dash.load(DATA_URLS).catch(err => {
   const b = document.getElementById('yd-banner');

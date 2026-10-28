@@ -1345,28 +1345,30 @@ dash.calc('insights', {
     if (!rows.length) { const td = tb.insertRow().insertCell(); td.colSpan = 2; td.className = 'yd-note'; td.textContent = 'Ma\'lumot yo\'q.'; }
   }
 
-  // ---- Har 10 daqiqada yangilash ----
+  // ---- Har 15 daqiqada yangilash ----
   const QUERIES = ['stats', 'stats_cmp', 'lifetime', 'placements', 'audience', 'regions', 'metrika', 'balance', 'videos', 'images'];
-  const EVERY = 10 * 60 * 1000;
+  const EVERY = 15 * 60 * 1000;
   const hhmm = (d) => d.toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: 'Asia/Tashkent' });
   let nextAt = Date.now() + EVERY;
   const stamp = () => {
     document.getElementById('yd-updated').textContent = hhmm(new Date());
     document.getElementById('yd-next').textContent = hhmm(new Date(nextAt));
   };
-  const refreshAll = () => {
+  // fresh: tugma bosilganda Yandex'dan yangi so'rov (saytda); vaqt bo'yicha esa oxirgi ma'lumot qayta o'qiladi
+  const refreshAll = (fresh) => {
     // Nisbiy davr (Bugun, 7 kun, Shu oy...) kun almashganda yangi sanaga suriladi
     const p = dash.params();
     const r = p.preset && p.preset !== 'custom' ? rangeFor(p.preset) : null;
     if (r && (r[0] !== p.date_from || r[1] !== p.date_to)) apply(r[0], r[1], p.preset, p.cmp_mode, !!loadPeriod().cmpManual);
     // Saytda hamma ma'lumot bitta faylda: bir marta qayta o'qiladi.
     // Claude ichida esa Yandex 10 soniyada 10 tadan ko'p so'rovni kechiktiradi: so'rovlar orasida 1,5 soniya
-    if (dash.reload) dash.reload();
+    if (fresh === true && dash.requestFresh) dash.requestFresh();
+    else if (dash.reload) dash.reload();
     else QUERIES.forEach((id, i) => setTimeout(() => dash.refresh(id), i * 1500));
     nextAt = Date.now() + EVERY;
     stamp();
   };
-  document.getElementById('yd-refresh').addEventListener('click', refreshAll);
+  document.getElementById('yd-refresh').addEventListener('click', () => refreshAll(true));
   setInterval(refreshAll, EVERY);
   stamp();
 

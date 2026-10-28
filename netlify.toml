@@ -7,3 +7,9 @@
   for = "/*"
   [headers.values]
     X-Robots-Tag = "noindex, nofollow"
+
+# "↻ Yangilash" tugmasi (/api/refresh) va har 15 daqiqalik jadval: GitHub'dagi yangilashni ishga tushiradi.
+# Netlify'da GH_ACTIONS_TOKEN muhit o'zgaruvchisi kerak (README'ga qarang).
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
