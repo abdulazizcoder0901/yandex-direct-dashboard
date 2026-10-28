@@ -36,6 +36,15 @@
 .yd-date.on { border-color: var(--yd-accent); box-shadow: inset 0 0 0 1px var(--yd-accent); }
 .yd-btn[aria-busy="true"] { opacity: .6; cursor: progress; }
 .yd-meta b.old { color: var(--yd-warn-dot); }
+/* Pastga aylantirilganda tepada qotib turadigan ixcham filtr */
+.yd-sticky { position: fixed; top: 0; left: 0; right: 0; z-index: 15; background: rgba(13, 15, 20, .94); backdrop-filter: blur(8px); border-bottom: 1px solid var(--color-border-line); box-shadow: 0 6px 18px rgba(0, 0, 0, .45); }
+.yd-sticky[hidden] { display: none; }
+.yd-sticky-in { max-width: 1400px; margin: 0 auto; padding: 8px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); display: flex; flex-direction: column; gap: 6px; }
+.yd-sticky .rng { font-size: 12px; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.yd-sticky .rng b { color: var(--color-fg); font-weight: 600; }
+.yd-sticky-pills { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.yd-sticky-pills::-webkit-scrollbar { display: none; }
+.yd-sticky-pills .yd-pill { flex: 1 0 auto; padding: 6px 14px; font-size: 13px; }
 /* Telefon: tugmalar to'r bo'lib turadi, hammasi ekranda ko'rinadi (yon tomonga surilmaydi) */
 @media (max-width: 640px) {
   /* 12 ustun: 1-qatorda 4 ta, 2-qatorda 3 ta tugma, bo'sh joy qolmaydi */
@@ -198,6 +207,13 @@
     <span class="yd-dash">—</span>
     <input class="yd-date" id="yd-to" type="date" min="2026-01-01" max="2099-12-31" aria-label="Tugash sanasi">
     <button class="yd-btn" id="yd-apply">Ko'rsatish</button>
+    </div>
+  </div>
+
+  <div class="yd-sticky" id="yd-sticky" hidden>
+    <div class="yd-sticky-in">
+      <div class="rng" id="yd-sticky-range"></div>
+      <div class="yd-sticky-pills" role="group" aria-label="Davr"></div>
     </div>
   </div>
 
@@ -845,6 +861,29 @@ dash.calc('insights', {
     monthSel.replaceChildren(...opts);
   })();
 
+  // Ixcham filtr: asosiy tugmalarning nusxasi, asosiy filtr ekrandan chiqqanda tepada ko'rinadi
+  const sticky = document.getElementById('yd-sticky'), stickyPills = sticky.querySelector('.yd-sticky-pills');
+  document.querySelectorAll('#yd-filters .yd-pills .yd-pill').forEach(b => {
+    const c = b.cloneNode(true);
+    if (c.id === 'yd-cmp-month') { c.removeAttribute('id'); c.dataset.cmp = '1'; }
+    stickyPills.appendChild(c);
+  });
+  stickyPills.addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.cmp) document.getElementById('yd-cmp-month').click();
+    else if (b.dataset.preset) { const r = rangeFor(b.dataset.preset); apply(r[0], r[1], b.dataset.preset); }
+  });
+  const showActive = () => {
+    const a = stickyPills.querySelector('[data-preset][aria-pressed="true"]');
+    if (a && !sticky.hidden) stickyPills.scrollLeft = a.offsetLeft - (stickyPills.clientWidth - a.offsetWidth) / 2;
+  };
+  // Filtr tepadan chiqa boshlashi bilan ixcham panel paydo bo'ladi
+  new IntersectionObserver(([en]) => {
+    sticky.hidden = en.intersectionRatio >= 1 || en.boundingClientRect.top >= 0;
+    showActive();
+  }, { threshold: [0, 1] }).observe(document.getElementById('yd-filters'));
+
   document.getElementById('yd-filters').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-preset]');
     if (b) { const r = rangeFor(b.dataset.preset); apply(r[0], r[1], b.dataset.preset); }
@@ -993,8 +1032,8 @@ dash.calc('insights', {
   function render() {
     const p = dash.params();
     // Filtr holati
-    document.querySelectorAll('#yd-filters button[data-preset]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.preset === p.preset)));
-    document.getElementById('yd-cmp-month').setAttribute('aria-pressed', String(p.cmp_mode === 'month'));
+    document.querySelectorAll('.yd-pill[data-preset]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.preset === p.preset)));
+    document.querySelectorAll('#yd-cmp-month, .yd-pill[data-cmp]').forEach(b => b.setAttribute('aria-pressed', String(p.cmp_mode === 'month')));
     const isMonth = typeof p.preset === 'string' && p.preset.startsWith('month:');
     monthSel.value = isMonth ? p.preset.slice(6) : '';
     monthSel.classList.toggle('idle', !isMonth);
@@ -1005,6 +1044,10 @@ dash.calc('insights', {
     const cmpRange = isDate(p.cmp_from) ? span(p.cmp_from, p.cmp_to) : '—';
     document.getElementById('yd-cmp-text').textContent = cmpRange;
     document.getElementById('yd-range-text').textContent = isDate(p.date_from) ? span(p.date_from, p.date_to) : '—';
+    const sr = document.getElementById('yd-sticky-range'), b1 = document.createElement('b'), b2 = document.createElement('b');
+    b1.textContent = isDate(p.date_from) ? span(p.date_from, p.date_to) : '—'; b2.textContent = cmpRange;
+    sr.replaceChildren('Davr ', b1, ' · solishtirish ', b2);
+    showActive();
 
     const t = dash.data('totals');
     document.querySelectorAll('[data-source="totals"]').forEach(el => {
