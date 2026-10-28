@@ -63,7 +63,7 @@
 .yd-pill:hover { border-color: #3a4152; }
 .yd-pill[aria-pressed="true"] { background: var(--yd-accent); border-color: var(--yd-accent); color: var(--yd-accent-fg); }
 .yd-pill.dashed { border-style: dashed; color: var(--color-fg-muted); }
-.yd-pill.dashed[aria-pressed="true"] { color: var(--yd-accent-fg); }
+.yd-pill.dashed[aria-pressed="true"] { background: rgba(76, 141, 255, .12); color: var(--yd-accent); border-color: var(--yd-accent); }
 .yd-select { font: inherit; font-size: 14px; color: var(--yd-accent-fg); background: var(--yd-accent); border: 0; border-radius: 999px; padding: 8px 14px; cursor: pointer; }
 .yd-select.idle { background: var(--color-panel); color: var(--color-fg); border: 1px solid var(--color-border-line); }
 .yd-date { font: inherit; font-size: 14px; color: var(--color-fg); background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 10px; padding: 7px 10px; color-scheme: dark; }
@@ -785,14 +785,16 @@ dash.calc('insights', {
     return null;
   }
   function cmpFor(from, to, mode) {
-    // O'tgan oyning o'sha sanalari; oy oxirigacha tanlangan bo'lsa, o'tgan oy ham oxirigacha (1–30-sen ↔ 1–31-avg)
+    // Oldingi oy to'liq: 1-sanadan oxirgi kunigacha (1–28-okt ↔ 1–30-sen)
+    if (mode === 'fullmonth') { const pm = minusMonth(monthStart(from)); return [pm, monthEnd(pm)]; }
+    // "O'tgan oyda shu sana" tugmasi: o'tgan oyning xuddi o'sha sanalari (1–28-okt ↔ 1–28-sen)
     if (mode === 'month') return [minusMonth(from), to === monthEnd(to) ? monthEnd(minusMonth(to)) : minusMonth(to)];
     const n = days(from, to);
     return [shift(from, -n), shift(from, -1)];
   }
-  // Oy bo'yicha tanlovlar (Shu oy, O'tgan oy, Oyni tanlang) o'tgan oyning 1-sanasidan solishtiriladi,
+  // Oy bo'yicha tanlovlar (Shu oy, O'tgan oy, Oyni tanlang) oldingi to'liq oy bilan solishtiriladi,
   // qolganlari (Bugun, 7 kun...) undan oldingi xuddi shuncha kun bilan
-  const defMode = (preset) => preset === 'this_month' || preset === 'last_month' || String(preset).startsWith('month:') ? 'month' : 'prev';
+  const defMode = (preset) => preset === 'this_month' || preset === 'last_month' || String(preset).startsWith('month:') ? 'fullmonth' : 'prev';
   // manual: solishtirish tugmasi bilan qo'lda tanlangan rejim (keyingi ochilishda ham saqlanadi)
   function apply(from, to, preset, mode, manual = false) {
     if (!isDate(from) || !isDate(to)) return;
@@ -800,12 +802,17 @@ dash.calc('insights', {
     const m = mode || defMode(preset);
     const [cf, ct] = cmpFor(from, to, m);
     dash.setParams({ date_from: from, date_to: to, cmp_from: cf, cmp_to: ct, preset, cmp_mode: m });
-    saveView({ preset, from, to, cmp: m, cmpManual: manual });
+    savePeriod({ preset, from, to, cmp: m, cmpManual: manual });
   }
-  // Oxirgi tanlangan filtr va bo'lim shu brauzerda saqlanadi (sahifa yangilansa ham qoladi)
-  const STORE = 'yd-view';
-  const loadView = () => { try { return JSON.parse(localStorage.getItem(STORE)) || {}; } catch (e) { return {}; } };
-  const saveView = (patch) => { try { localStorage.setItem(STORE, JSON.stringify({ ...loadView(), ...patch })); } catch (e) {} };
+  // Oxirgi ochilgan bo'lim shu brauzerda doim saqlanadi; davr esa faqat shu oynada
+  // (sahifa yangilansa qoladi, yangidan ochilganda "Shu oy" bilan boshlanadi)
+  const store = (kind, key) => ({
+    load: () => { try { return JSON.parse(window[kind].getItem(key)) || {}; } catch (e) { return {}; } },
+    save(patch) { try { window[kind].setItem(key, JSON.stringify({ ...this.load(), ...patch })); } catch (e) {} }
+  });
+  const view = store('localStorage', 'yd-view'), period = store('sessionStorage', 'yd-period');
+  const loadView = view.load, saveView = (p) => view.save(p);
+  const loadPeriod = period.load, savePeriod = (p) => period.save(p);
   // Kiritilgan sanalar biror tugmaga to'g'ri kelsa, o'sha tugma tanlangan bo'lib qoladi
   const PRESETS = ['today', 'yesterday', '7', '14', '30', 'this_month', 'last_month'];
   const presetFor = (from, to) => {
@@ -816,7 +823,7 @@ dash.calc('insights', {
   };
   // Sahifa ochilganda: oxirgi tanlov (nisbiy davr bugungi sanaga suriladi), bo'lmasa shu oy
   const setDefaults = () => {
-    const v = loadView(), r = v.preset && v.preset !== 'custom' ? rangeFor(v.preset) : null;
+    const v = loadPeriod(), r = v.preset && v.preset !== 'custom' ? rangeFor(v.preset) : null;
     const cmp = v.cmpManual ? v.cmp : undefined;
     if (r) apply(r[0], r[1], v.preset, cmp, !!v.cmpManual);
     else if (v.preset === 'custom' && isDate(v.from) && isDate(v.to)) apply(v.from, v.to, 'custom', cmp, !!v.cmpManual);
@@ -844,7 +851,9 @@ dash.calc('insights', {
   });
   document.getElementById('yd-cmp-month').addEventListener('click', () => {
     const p = dash.params();
-    apply(p.date_from, p.date_to, p.preset, p.cmp_mode === 'month' ? 'prev' : 'month', true);
+    // Yoqilsa: o'tgan oyning o'sha sanalari; o'chirilsa: tanlangan davrning odatiy solishtiruvi
+    if (p.cmp_mode === 'month') apply(p.date_from, p.date_to, p.preset);
+    else apply(p.date_from, p.date_to, p.preset, 'month', true);
   });
   monthSel.addEventListener('change', () => {
     if (!monthSel.value) return;
@@ -1009,7 +1018,8 @@ dash.calc('insights', {
       const c = row.change;
       el.textContent = (c > 0 ? '↑ ' : c < 0 ? '↓ ' : '')
         + (metric === 'roi' ? grp(Math.round(Math.abs(c) * 100)) + ' p.p.' : d3.format('.0%')(Math.abs(c)))
-        + ' · ' + cmpRange;
+        + ' · ' + cmpRange + ': ' + FMT[metric](row.previous);
+      el.title = 'Tanlangan davr ' + span(p.date_from, p.date_to) + ', solishtirish ' + cmpRange;
       const g = GOOD_UP[metric];
       if (g != null && Math.abs(c) >= 0.005) el.classList.add((c > 0) === g ? 'good' : 'bad');
     });
@@ -1315,7 +1325,7 @@ dash.calc('insights', {
     // Nisbiy davr (Bugun, 7 kun, Shu oy...) kun almashganda yangi sanaga suriladi
     const p = dash.params();
     const r = p.preset && p.preset !== 'custom' ? rangeFor(p.preset) : null;
-    if (r && (r[0] !== p.date_from || r[1] !== p.date_to)) apply(r[0], r[1], p.preset, p.cmp_mode, !!loadView().cmpManual);
+    if (r && (r[0] !== p.date_from || r[1] !== p.date_to)) apply(r[0], r[1], p.preset, p.cmp_mode, !!loadPeriod().cmpManual);
     // Saytda hamma ma'lumot bitta faylda: bir marta qayta o'qiladi.
     // Claude ichida esa Yandex 10 soniyada 10 tadan ko'p so'rovni kechiktiradi: so'rovlar orasida 1,5 soniya
     if (dash.reload) dash.reload();
