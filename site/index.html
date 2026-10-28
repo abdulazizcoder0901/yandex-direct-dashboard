@@ -1170,7 +1170,13 @@ dash.calc('insights', {
       const row = t.status === 'ok' ? t.data.find(r => r.metric === metric) : null;
       if (!row) { el.textContent = t.status === 'error' && el.classList.contains('val') ? 'Yuklanmadi' : '—'; return; }
       if (el.dataset.field === 'current') { el.textContent = FMT[metric](row.current); return; }
-      if (row.change == null) { el.textContent = row.previous ? '—' : cmpRange + ': ma\'lumot yo\'q'; return; }
+      if (row.change == null) {
+        // Solishtirish davrida reklama umuman yurmagan bo'lsa shuni aytamiz; aks holda o'sha davr qiymati (0 ham)
+        const prevShows = (t.data.find(r => r.metric === 'impressions') || {}).previous;
+        el.textContent = !prevShows ? cmpRange + ': reklama ishlamagan'
+          : cmpRange + ': ' + (row.previous == null ? '—' : FMT[metric](row.previous));
+        return;
+      }
       const c = row.change;
       el.textContent = (c > 0 ? '↑ ' : c < 0 ? '↓ ' : '')
         + (metric === 'roi' ? grp(Math.round(Math.abs(c) * 100)) + ' p.p.' : d3.format('.0%')(Math.abs(c)))
