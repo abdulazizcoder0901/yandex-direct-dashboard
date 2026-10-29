@@ -325,6 +325,10 @@ window.dash = (() => {
 .yd-tip .d { color: var(--cds-text-secondary); }
 .yd-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
 .yd-tools h3, .yd-tools > div > h3 { margin: 0; }
+.yd-wide-card { grid-column: 1 / -1; }
+.yd-dyn td small { display: block; font-size: 11px; color: var(--color-fg-muted); }
+.yd-dyn td small.good { color: var(--color-ok); }
+.yd-dyn td small.bad { color: var(--color-bad); }
 .yd-search { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--color-border-line); border-radius: 10px; background: var(--color-bg); color: var(--color-fg); min-width: 0; flex: 0 1 16rem; }
 .yd-scroll { overflow: auto; }
 .yd-scroll.tall { max-height: 32rem; }
@@ -423,6 +427,15 @@ window.dash = (() => {
 .yd-table tr.yd-sub td:first-child { padding-left: 34px; min-width: 18rem; }
 .yd-caret { display: inline-block; width: 1.1em; color: var(--color-fg-muted); }
 .yd-sub-name small { display: block; color: var(--color-fg-muted); font-size: 12px; }
+.yd-lvl0 { font-weight: 600; }
+.yd-lvl1 { padding-left: 18px; display: inline-block; }
+.yd-lvl2 { padding-left: 36px; display: inline-block; color: var(--color-fg-muted); }
+.yd-tile.click { cursor: pointer; }
+.yd-tile.click:hover { border-color: #3a4152; }
+.yd-tile.click .lbl::after { content: " ›"; color: var(--yd-accent); }
+/* Qisqa xabar (pastda) */
+.yd-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60; background: #1c2030; color: #e8eaf0; border: 1px solid #2c3140; border-radius: 12px; padding: 10px 16px; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.5); max-width: calc(100% - 32px); line-height: 1.5; }
+.yd-toast[hidden] { display: none; }
 .yd-ent-panel { display: flex; flex-direction: column; gap: 24px; }
 .yd-ent-panel[hidden] { display: none; }
 @media (max-width: 640px) { .yd-hide-narrow { display: none; } .yd-pill { padding: 7px 14px; font-size: 13px; } }
@@ -490,7 +503,7 @@ window.dash = (() => {
       <div class="yd-tile"><span class="lbl">CPA</span>
         <span class="val dash-skeleton" data-source="totals" data-field="current" data-where="metric=cpa">—</span>
         <span class="sub yd-chg dash-skeleton" data-source="totals" data-field="change" data-where="metric=cpa">—</span></div>
-      <div class="yd-tile"><span class="lbl">Rasxod</span>
+      <div class="yd-tile click" id="yd-cost-tile" role="button" tabindex="0" title="Har kuni qancha ketganini ko'rish"><span class="lbl">Rasxod</span>
         <span class="val dash-skeleton" data-source="totals" data-field="current" data-where="metric=cost">—</span>
         <span class="sub yd-chg dash-skeleton" data-source="totals" data-field="change" data-where="metric=cost">—</span></div>
       <div class="yd-tile"><span class="lbl">Kliklar</span>
@@ -511,6 +524,12 @@ window.dash = (() => {
       <div class="yd-card" id="conv-chart">
         <div class="yd-tools"><h3>Kunlik konversiyalar</h3><div class="yd-seg yd-ctype" data-chart="yd-conv" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
         <div class="yd-chart dash-skeleton" data-source="daily" id="yd-conv"></div>
+      </div>
+      <div class="yd-card yd-wide-card" id="dyn-card">
+        <div class="yd-tools"><div><h3>Kunlik dinamika</h3><p class="yd-note">Har kun oldingi kun bilan solishtirilgan. Kunni bossangiz, pul qaysi kampaniya, guruh va kreativga ketgani chiqadi.</p></div><div class="yd-seg yd-ctype" data-chart="yd-dyn" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
+        <div class="yd-seg yd-dyn-m" data-chart="yd-dyn" role="group" aria-label="Ko'rsatkich"><button data-m="cost">Rasxod</button><button data-m="impressions">Ko'rsatish</button><button data-m="clicks">Klik</button><button data-m="ctr">CTR</button><button data-m="cpc">CPC</button><button data-m="conversions">Konv.</button><button data-m="cpa">CPA</button></div>
+        <div class="yd-chart" data-source="daily" id="yd-dyn"></div>
+        <div class="yd-scroll tall" id="yd-dyn-table"></div>
       </div>
     </div>
   </section>
@@ -562,7 +581,7 @@ window.dash = (() => {
       </div>
       <div class="yd-card"><div class="yd-scroll">
         <table class="yd-table" id="yd-camp" data-source="entities" data-row-key="id">
-          <thead><tr><th data-field="name"><button data-k="name">Kampaniya</button></th><th data-field="status" class="yd-hide-narrow"><button data-k="status">Holat</button></th><th data-field="created_date" class="yd-hide-narrow"><button data-k="created_date">Yaratilgan</button></th><th data-field="first_date" class="yd-hide-narrow"><button data-k="first_date">Yoqilgan</button></th><th data-field="run_count" class="yd-hide-narrow"><button data-k="run_count">Yoqilish</button></th><th data-field="last_date" class="yd-hide-narrow"><button data-k="last_date">O'chgan</button></th><th data-field="cost"><button data-k="cost">Rasxod</button></th><th data-field="budget_share"><button data-k="budget_share" title="Kabinetdagi kampaniya byudjeti: shu kun yoki haftada qanchasi ishlatilgan">Byudjet</button></th><th data-field="impressions" class="yd-hide-narrow"><button data-k="impressions">Ko'rsatish</button></th><th data-field="clicks"><button data-k="clicks">Klik</button></th><th data-field="ctr" class="yd-hide-narrow"><button data-k="ctr">CTR</button></th><th data-field="cpc" class="yd-hide-narrow"><button data-k="cpc">CPC</button></th><th data-field="conversions"><button data-k="conversions">Konv.</button></th><th data-field="cr" class="yd-hide-narrow"><button data-k="cr">Lid %</button></th><th data-field="cpa"><button data-k="cpa">CPA</button></th><th data-field="roi" class="yd-hide-narrow"><button data-k="roi">ROI</button></th></tr></thead>
+          <thead><tr><th data-field="name"><button data-k="name">Kampaniya</button></th><th data-field="status" class="yd-hide-narrow"><button data-k="status">Holat</button></th><th data-field="created_date" class="yd-hide-narrow"><button data-k="created_date">Yaratilgan</button></th><th data-field="first_date" class="yd-hide-narrow"><button data-k="first_date">Yoqilgan</button></th><th data-field="run_count" class="yd-hide-narrow"><button data-k="run_count">Yoqilish</button></th><th data-field="last_date" class="yd-hide-narrow"><button data-k="last_date">O'chgan</button></th><th data-field="cost"><button data-k="cost">Rasxod</button></th><th data-field="budget_share"><button data-k="budget_share" title="Bugun ishlatilgan / kunlik limit. ≈ — limit xarajatdan aniqlangan (pul shu summada to'xtagan kunlar bor)">Byudjet</button></th><th data-field="impressions" class="yd-hide-narrow"><button data-k="impressions">Ko'rsatish</button></th><th data-field="clicks"><button data-k="clicks">Klik</button></th><th data-field="ctr" class="yd-hide-narrow"><button data-k="ctr">CTR</button></th><th data-field="cpc" class="yd-hide-narrow"><button data-k="cpc">CPC</button></th><th data-field="conversions"><button data-k="conversions">Konv.</button></th><th data-field="cr" class="yd-hide-narrow"><button data-k="cr">Lid %</button></th><th data-field="cpa"><button data-k="cpa">CPA</button></th><th data-field="roi" class="yd-hide-narrow"><button data-k="roi">ROI</button></th></tr></thead>
           <tbody></tbody>
         </table>
       </div></div>
@@ -610,8 +629,10 @@ window.dash = (() => {
         <p class="yd-note">ROI: 1 lid = 420 000 so'm (Metrika'dagi forma qiymati) deb hisoblangan.</p>
       </div>
       <div class="yd-card">
-        <div class="yd-tools"><h3>Kunlik rasxod</h3><div class="yd-seg yd-ctype" data-chart="yd-ent-chart" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
+        <div class="yd-tools"><div><h3>Kunlik dinamika</h3><p class="yd-note">Kunni bossangiz, o'sha kungi rasxod guruh va kreativlarga bo'lib ko'rsatiladi.</p></div><div class="yd-seg yd-ctype" data-chart="yd-ent-chart" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
+        <div class="yd-seg yd-dyn-m" data-chart="yd-ent-chart" role="group" aria-label="Ko'rsatkich"><button data-m="cost">Rasxod</button><button data-m="impressions">Ko'rsatish</button><button data-m="clicks">Klik</button><button data-m="ctr">CTR</button><button data-m="cpc">CPC</button><button data-m="conversions">Konv.</button><button data-m="cpa">CPA</button></div>
         <div class="yd-chart" data-source="stats" id="yd-ent-chart"></div>
+        <div class="yd-scroll tall" id="yd-ent-dyn-table"></div>
       </div>
       <div class="yd-card" id="yd-children-card">
         <div class="yd-tools">
@@ -891,11 +912,18 @@ dash.calc('entities', {
         status,
         created_date: t.level === 'campaign' && c && c.Created ? c.Created : null,
         ...(() => {
-          const b = t.level === 'campaign' && c && c.Budget && c.Budget.Amount > 0 ? c.Budget : null;
-          if (!b) return { budget: null, budget_period: null, budget_used: null, budget_share: null };
+          // Byudjet API'da yo'q. Kiritilgan bo'lsa (manual_campaigns.json, Budget) o'sha; bo'lmasa kunlik limit
+          // xarajatdan aniqlanadi: eng katta kunlik xarajat yaxlit summa (masalan, 200 000,00) bo'lsa — reklama shu yerda to'xtagan
+          let b = t.level === 'campaign' && c && c.Budget && c.Budget.Amount > 0 ? { ...c.Budget, src: 'kiritilgan' } : null;
+          if (!b && t.level === 'campaign') {
+            const max = Math.max(0, ...Object.values(daycost));
+            if (max >= 1000 && Math.abs(max - Math.round(max / 1000) * 1000) < 0.005) b = { Amount: Math.round(max), Period: 'DAY', src: 'taxmin' };
+          }
+          if (!b) return { budget: null, budget_period: null, budget_used: null, budget_share: null, budget_src: null, budget_hits: null };
           const from = b.Period === 'DAY' ? todayT : weekStart;
           const used = Object.entries(daycost).reduce((a, [dd, v]) => a + (dd >= from && dd <= todayT ? v : 0), 0);
-          return { budget: b.Amount, budget_period: b.Period === 'DAY' ? 'kun' : 'hafta', budget_used: Math.round(used * 100) / 100, budget_share: used / b.Amount };
+          const hits = b.Period === 'DAY' ? Object.values(daycost).filter(v => v >= b.Amount * 0.99).length : null;
+          return { budget: b.Amount, budget_period: b.Period === 'DAY' ? 'kun' : 'hafta', budget_used: Math.round(used * 100) / 100, budget_share: used / b.Amount, budget_src: b.src, budget_hits: hits };
         })(),
         ctr: t.impressions ? t.clicks / t.impressions : null,
         cpc: t.clicks ? cost / t.clicks : null,
@@ -910,12 +938,12 @@ dash.calc('entities', {
 dash.calc('daily', {
   inputs: ['stats'],
   title: 'Kunlik jami',
-  description: 'Tanlangan davrdagi har kun uchun barcha kampaniyalar xarajati, kliklari va konversiyalari.',
+  description: 'Tanlangan davrdagi har kun uchun barcha kampaniyalar xarajati, ko\'rsatishlari, kliklari va konversiyalari.',
   fn: (stats) => {
     const by = new Map();
     for (const r of stats) {
-      const t = by.get(r.Date) || { date: r.Date, cost: 0, clicks: 0, conversions: 0 };
-      t.cost += r.Cost || 0; t.clicks += r.Clicks || 0; t.conversions += r.Conversions || 0;
+      const t = by.get(r.Date) || { date: r.Date, cost: 0, impressions: 0, clicks: 0, conversions: 0 };
+      t.cost += r.Cost || 0; t.impressions += r.Impressions || 0; t.clicks += r.Clicks || 0; t.conversions += r.Conversions || 0;
       by.set(r.Date, t);
     }
     return [...by.values()].sort((a, b) => a.date < b.date ? -1 : 1);
@@ -1213,7 +1241,7 @@ dash.calc('insights', {
     const W = box.clientWidth || 320, H = 220;
     const svg = d3.select(box).insert('svg', ':first-child').attr('width', '100%').attr('viewBox', `0 0 ${W} ${H}`);
     const y = d3.scaleLinear([0, d3.max(rows, r => r[key]) || 1], [H - 24, 8]).nice();
-    const ticks = y.ticks(4).filter(t => key === 'cost' || Number.isInteger(t));
+    const ticks = y.ticks(4).filter(t => !['impressions', 'clicks', 'conversions'].includes(key) || Number.isInteger(t));
     const ml = Math.ceil(measure(svg, ticks.map(yFmt))) + 10;
     const x = d3.scaleBand(rows.map(r => r.date), [ml, W - 4]).paddingInner(0.25);
     svg.append('g').selectAll('line').data(ticks).join('line')
@@ -1247,7 +1275,9 @@ dash.calc('insights', {
     const tip = tipFor(box);
     svg.append('g').selectAll('rect').data(rows).join('rect')
       .attr('x', d => x(d.date)).attr('width', x.step()).attr('y', 0).attr('height', H - 24).attr('fill', 'transparent')
-      .on('mouseenter', (e, d) => showTip(box, tip, x(d.date) + x.bandwidth() / 2, y(d[key]), day(d.date), label(d)))
+      .style('cursor', box._onDay ? 'pointer' : null)
+      .on('click', (e, d) => { if (box._onDay && d.cost > 0) { tip.hidden = true; box._onDay(d.date); } })
+      .on('mouseenter', (e, d) => showTip(box, tip, x(d.date) + x.bandwidth() / 2, y(d[key]), day(d.date), label(d) + (box._onDay && d.cost > 0 ? ' · bosing: tafsilot' : '')))
       .on('mouseleave', () => { tip.hidden = true; });
   }
 
@@ -1441,11 +1471,16 @@ dash.calc('insights', {
       ];
       for (const [id, key, yFmt, color, label] of charts) {
         const box = document.getElementById(id);
+        box._onDay = (dt) => openDay(dt);
         setState(box, d.status);
         if (d.status === 'ok') bars(box, win, key, yFmt, color, label);
         else if (d.status === 'error') msg(box, 'Yuklanmadi');
         else box.querySelectorAll('svg, .yd-err').forEach(n => n.remove());
       }
+      const dyn = document.getElementById('yd-dyn');
+      dyn._onDay = (dt) => openDay(dt);
+      if (d.status === 'ok') dynamics(dyn, document.getElementById('yd-dyn-table'), win, dyn._onDay);
+      else if (d.status === 'error') msg(dyn, 'Yuklanmadi');
     }
 
     const b = dash.data('breakdown');
@@ -1462,7 +1497,7 @@ dash.calc('insights', {
   const LEVEL_NAME = { campaign: 'Kampaniya', adgroup: 'Guruh (ads set)', ad: 'Kreativ' };
   const CAMP_COLS = [...ENT_COLS.slice(0, ENT_COLS.indexOf('cost') + 1), 'budget_share', ...ENT_COLS.slice(ENT_COLS.indexOf('cost') + 1)];
   // "120 000 / 500 000 so'm · 24%" — shu kun yoki haftada ishlatilgan / belgilangan
-  const budgetText = (r) => r.budget == null ? '—' : grp(Math.round(r.budget_used)) + ' / ' + grp(Math.round(r.budget)) + ' so\'m · ' + d3.format('.0%')(r.budget_share);
+  const budgetText = (r) => r.budget == null ? '—' : grp(Math.round(r.budget_used)) + ' / ' + (r.budget_src === 'taxmin' ? '≈' : '') + grp(Math.round(r.budget)) + ' so\'m · ' + d3.format('.0%')(r.budget_share);
   const CHILD = { campaign: 'adgroup', adgroup: 'ad' };
   let backTo = null;
   document.getElementById('yd-back').addEventListener('click', () => {
@@ -1579,7 +1614,7 @@ dash.calc('insights', {
         if (c === 'tip') { td.textContent = ''; if (r.level === 'ad') td.append(tipChip(r)); }
         if (c === 'budget_share') {
           td.textContent = budgetText(r);
-          td.title = r.budget == null ? 'Byudjet kiritilmagan (data/manual_campaigns.json, Budget)' : 'Bir ' + r.budget_period + 'lik byudjet: ' + som(r.budget) + ', ishlatildi ' + som(r.budget_used) + ', qoldi ' + som(Math.max(0, r.budget - r.budget_used));
+          td.title = r.budget == null ? 'Byudjet aniqlanmadi: kunlik xarajat hech qachon limitga yetmagan' : (r.budget_src === 'taxmin' ? 'Taxminiy kunlik limit (xarajat shu summada to\'xtagan kunlar: ' + r.budget_hits + ')' : 'Bir ' + r.budget_period + 'lik byudjet') + ': ' + som(r.budget) + '. Bugun ishlatildi ' + som(r.budget_used) + ', qoldi ' + som(Math.max(0, r.budget - r.budget_used));
           if (r.budget_share >= 0.9) td.classList.add('yd-warn'); else if (r.budget == null) td.classList.add('zero');
         }
       }
@@ -1623,8 +1658,9 @@ dash.calc('insights', {
     st.textContent = sel.status; st.classList.toggle('on', sel.status === 'Yoniq');
     document.getElementById('yd-ent-kind').textContent = LEVEL_NAME[sel.level] + ' · ID ' + sel.entity_id;
     document.getElementById('yd-ent-budget-row').hidden = sel.level !== 'campaign';
-    document.getElementById('yd-ent-budget').textContent = sel.budget == null ? 'kiritilmagan'
-      : 'bir ' + sel.budget_period + 'ga ' + som(sel.budget) + ' · ishlatildi ' + som(sel.budget_used) + ' (' + d3.format('.0%')(sel.budget_share) + ') · qoldi ' + som(Math.max(0, sel.budget - sel.budget_used));
+    document.getElementById('yd-ent-budget').textContent = sel.budget == null ? 'aniqlanmadi (kunlik xarajat limitga yetmagan)'
+      : (sel.budget_src === 'taxmin' ? 'kunlik limit ≈ ' : 'bir ' + sel.budget_period + 'ga ') + som(sel.budget) + ' · ' + (sel.budget_period === 'kun' ? 'bugun' : 'shu hafta') + ' ishlatildi ' + som(sel.budget_used) + ' (' + d3.format('.0%')(sel.budget_share) + ') · qoldi ' + som(Math.max(0, sel.budget - sel.budget_used))
+        + (sel.budget_hits ? ' · limitga yetgan kunlar: ' + sel.budget_hits : '');
     document.querySelectorAll('.yd-ent').forEach(el => {
       el.dataset.where = 'id=' + encodeURIComponent(sel.id).replace(/%7C/g, '|');
       setState(el, e.status);
@@ -1662,7 +1698,13 @@ dash.calc('insights', {
     }
 
     // Kunlik rasxod shu bo'lim bo'yicha
-    if (tab === 'kampaniyalar') dailyChart(document.getElementById('yd-ent-chart'), { campaign: 'CampaignId', adgroup: 'AdGroupId', ad: 'AdId' }[sel.level], sel.entity_id, p);
+    if (tab === 'kampaniyalar') {
+      const idKey = { campaign: 'CampaignId', adgroup: 'AdGroupId', ad: 'AdId' }[sel.level], box = document.getElementById('yd-ent-chart');
+      box._onDay = (dt) => openDay(dt, { key: idKey, id: sel.entity_id, name: sel.name });
+      const win = dailyRows(idKey, sel.entity_id, p);
+      if (win) dynamics(box, document.getElementById('yd-ent-dyn-table'), win, box._onDay);
+      else if (dash.data('stats').status === 'error') msg(box, 'Yuklanmadi');
+    }
   }
 
   // ---- Modal oyna: yoqilgan sanalar, kreativ kartasi, auditoriya → kanallar ----
@@ -1759,23 +1801,124 @@ dash.calc('insights', {
       const box = el('div', 'yd-chart'); box.id = 'yd-ad-chart';
       body.append(head, el('p', 'yd-note', 'Tanlangan davr: ' + (isDate(p.date_from) ? span(p.date_from, p.date_to) : '—')), tiles, tipsH, tips, chartH, box);
       syncCtype();
+      box._onDay = (dt) => openDay(dt, { key: 'AdId', id: r.entity_id, name: r.title || r.name });
       dailyChart(box, 'AdId', r.entity_id, p);
     });
   }
 
-  // Bir kampaniya, guruh yoki kreativning tanlangan davrdagi kunlik rasxodi
-  function dailyChart(box, idKey, entityId, p) {
+  // Bir kun qayerga ketdi: kampaniya → guruh (ads set) → kreativ; filter bilan faqat bitta kampaniya/guruh/kreativ
+  const adLabel = (() => {
+    let cache = null, at = null;
+    return (adId) => {
+      const e = dash.data('entities');
+      if (e.data !== at) { at = e.data; cache = new Map((e.data || []).filter(r => r.level === 'ad').map(r => [r.entity_id, r.title ? r.title + ' (' + r.name + ')' : r.name])); }
+      return cache.get(adId) || ('E\'lon ' + adId);
+    };
+  })();
+  function openDay(date, filter) {
+    openModal(day(date) + ' ' + date.slice(0, 4) + ': rasxod qayerga ketdi' + (filter ? ' · ' + filter.name : ''), true, (body) => {
+      const l = dash.data('lifetime');
+      if (l.status !== 'ok') { body.append(el('p', 'yd-note', 'Yuklanmoqda…')); return; }
+      const rows = l.data.filter(r => r.Date === date && (!filter || r[filter.key] === filter.id) && ((r.Cost || 0) > 0 || (r.Impressions || 0) > 0));
+      const sum = (a) => a.reduce((t, r) => ({ cost: t.cost + (r.Cost || 0), impressions: t.impressions + (r.Impressions || 0), clicks: t.clicks + (r.Clicks || 0), conversions: t.conversions + (r.Conversions || 0) }), { cost: 0, impressions: 0, clicks: 0, conversions: 0 });
+      const tot = sum(rows);
+      body.append(el('p', 'yd-take', 'Jami ' + som(tot.cost) + ' · ' + count(tot.impressions) + ' ko\'rsatish · ' + count(tot.clicks) + ' klik · ' + count(tot.conversions) + ' lid'));
+      const group = (a, k) => { const m = new Map(); for (const r of a) { if (!m.has(r[k])) m.set(r[k], []); m.get(r[k]).push(r); } return [...m.entries()].sort((x, y) => sum(y[1]).cost - sum(x[1]).cost); };
+      const out = [], maxCost = tot.cost || 1;
+      const line = (name, cls, a) => { const t = sum(a); const n = el('span', cls, name); const f = document.createDocumentFragment(); f.append(costBar(t.cost, maxCost), som(t.cost));
+        out.push([n, f, count(t.impressions), count(t.clicks), count(t.conversions), t.conversions ? som(t.cost / t.conversions) : '—']); };
+      for (const [, cr] of group(rows, 'CampaignId')) {
+        line(cr[0].CampaignName, 'yd-lvl0', cr);
+        for (const [, gr] of group(cr, 'AdGroupId')) {
+          line(gr[0].AdGroupName, 'yd-lvl1', gr);
+          for (const [adId, ar] of group(gr, 'AdId')) line(adLabel(adId), 'yd-lvl2', ar);
+        }
+      }
+      body.append(miniTable(['Kampaniya › guruh › kreativ', 'Rasxod', 'Ko\'rsatish', 'Klik', 'Konv.', 'CPA'], out),
+        el('p', 'yd-note', 'Qalin — kampaniya, bir pog\'ona ichkari — guruh (ads set), eng ichkari — kreativ. Kanallar bo\'yicha bo\'linishi "Telegram kanallari" bo\'limida.'));
+    });
+  }
+  // Tanlangan davrning har kuni qancha ketgani; kunni bossangiz, o'sha kun tafsiloti
+  function openSpendDays() {
+    openModal('Kunlik rasxod', true, (body) => {
+      const p = dash.params(), dd = dash.data('daily');
+      if (dd.status !== 'ok' || !isDate(p.date_from)) { body.append(el('p', 'yd-note', 'Yuklanmoqda…')); return; }
+      const by = new Map(dd.data.map(r => [r.date, r]));
+      const days = [];
+      for (let x = p.date_to; x >= p.date_from; x = shift(x, -1)) days.push(by.get(x) || { date: x, cost: 0, clicks: 0, conversions: 0 });
+      const spent = days.filter(r => r.cost > 0), tot = spent.reduce((a, r) => a + r.cost, 0), maxCost = d3.max(days, r => r.cost) || 1;
+      body.append(el('p', 'yd-take', span(p.date_from, p.date_to) + ' · jami ' + som(tot) + ' · pul ketgan kunlar: ' + spent.length + ' · o\'rtacha ' + som(spent.length ? tot / spent.length : 0) + '/kun'));
+      const t = miniTable(['Kun', 'Rasxod', 'Klik', 'Konv.'], days.map(r => { const f = document.createDocumentFragment(); f.append(costBar(r.cost, maxCost), som(r.cost)); return [day(r.date) + ' ' + r.date.slice(0, 4), f, count(r.clicks), count(r.conversions)]; }));
+      [...t.querySelectorAll('tbody tr')].forEach((tr, i) => {
+        if (!days[i] || !(days[i].cost > 0)) { tr.cells[1].classList.add('zero'); return; }
+        tr.className = 'yd-link'; tr.tabIndex = 0; tr.title = 'Shu kun qaysi kampaniya, guruh va kreativga ketganini ko\'rish';
+        const go = () => openDay(days[i].date);
+        tr.addEventListener('click', go); tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') go(); });
+      });
+      body.append(t, el('p', 'yd-note', 'Kunni bossangiz, o\'sha kungi rasxod kampaniya, guruh va kreativlarga bo\'lib ko\'rsatiladi.'));
+    });
+  }
+  // Bir kampaniya, guruh yoki kreativning tanlangan davrdagi har kungi jami (bo'sh kunlar 0)
+  function dailyRows(idKey, entityId, p) {
     const s = dash.data('stats');
-    if (s.status !== 'ok' || !isDate(p.date_from) || !isDate(p.date_to)) { if (s.status === 'error') msg(box, 'Yuklanmadi'); return; }
+    if (s.status !== 'ok' || !isDate(p.date_from) || !isDate(p.date_to)) return null;
     const by = new Map();
     for (const r of s.data) if (r[idKey] === entityId) {
-      const t = by.get(r.Date) || { date: r.Date, cost: 0, clicks: 0, conversions: 0 };
-      t.cost += r.Cost || 0; t.clicks += r.Clicks || 0; t.conversions += r.Conversions || 0; by.set(r.Date, t);
+      const t = by.get(r.Date) || { date: r.Date, cost: 0, impressions: 0, clicks: 0, conversions: 0 };
+      t.cost += r.Cost || 0; t.impressions += r.Impressions || 0; t.clicks += r.Clicks || 0; t.conversions += r.Conversions || 0; by.set(r.Date, t);
     }
     const win = [];
-    for (let x = p.date_from; x <= p.date_to; x = shift(x, 1)) win.push(by.get(x) || { date: x, cost: 0, clicks: 0, conversions: 0 });
+    for (let x = p.date_from; x <= p.date_to; x = shift(x, 1)) win.push(by.get(x) || { date: x, cost: 0, impressions: 0, clicks: 0, conversions: 0 });
+    return win;
+  }
+  function dailyChart(box, idKey, entityId, p) {
+    const win = dailyRows(idKey, entityId, p);
+    if (!win) { if (dash.data('stats').status === 'error') msg(box, 'Yuklanmadi'); return; }
     bars(box, win, 'cost', v => v >= 1000 ? grp(v / 1000) + 'K' : String(v), COLORS[0],
       r => som(r.cost) + ' · ' + count(r.clicks) + ' klik · ' + count(r.conversions) + ' konv.');
+  }
+  // Kunlik dinamika: tanlangan ko'rsatkich grafigi + har kun oldingi kunga nisbatan o'zgarishi bilan jadval
+  const kFmt = v => v >= 1000 ? grp(v / 1000) + 'K' : String(v);
+  const DYN = {
+    cost: ['Rasxod', som, kFmt], impressions: ['Ko\'rsatish', count, kFmt], clicks: ['Klik', count, String],
+    ctr: ['CTR', pct, v => d3.format('.1%')(v)], cpc: ['CPC', som, kFmt], conversions: ['Konv.', count, String], cpa: ['CPA', som, kFmt]
+  };
+  const dynMetric = (() => { try { return JSON.parse(localStorage.getItem('yd-dyn')) || {}; } catch (e) { return {}; } })();
+  const metricOf = (id) => DYN[dynMetric[id]] ? dynMetric[id] : 'cost';
+  const syncDyn = () => document.querySelectorAll('.yd-dyn-m[data-chart]').forEach(g =>
+    g.querySelectorAll('button[data-m]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === metricOf(g.dataset.chart)))));
+  document.addEventListener('click', (e) => {
+    const b = e.target.closest('.yd-dyn-m[data-chart] button[data-m]'); if (!b) return;
+    dynMetric[b.closest('.yd-dyn-m').dataset.chart] = b.dataset.m;
+    try { localStorage.setItem('yd-dyn', JSON.stringify(dynMetric)); } catch (er) {}
+    syncDyn(); render();
+  });
+  syncDyn();
+  function dynamics(box, tableBox, days, onDay) {
+    const rows = days.map(r => ({ ...r, ctr: r.impressions ? r.clicks / r.impressions : null, cpc: r.clicks ? r.cost / r.clicks : null, cpa: r.conversions ? r.cost / r.conversions : null }));
+    const m = metricOf(box.id), [name, fmt, yFmt] = DYN[m];
+    bars(box, rows.map(r => ({ ...r, [m]: r[m] || 0 })), m, yFmt, m === 'conversions' || m === 'cpa' ? COLORS[1] : COLORS[0],
+      r => name + ': ' + fmt(r[m] || null) + ' · ' + som(r.cost) + ' · ' + count(r.clicks) + ' klik');
+    // Jadval: yangi kun tepada; o'zgarish — oldingi kunga nisbatan (oldingi kunda qiymat bo'lmasa ko'rsatilmaydi)
+    const keys = ['cost', 'impressions', 'clicks', 'ctr', 'cpc', 'conversions', 'cpa'];
+    const cell = (r, prev, k) => {
+      const f = document.createDocumentFragment(); f.append(DYN[k][1](r[k]));
+      if (r[k] != null && prev && prev[k]) {
+        const raw = r[k] / prev[k] - 1, ch = Math.round(raw * 100) / 100, sm = el('small', null, (ch > 0 ? '↑ +' : ch < 0 ? '↓ −' : '') + d3.format('.0%')(Math.abs(ch)));
+        if (ch && GOOD_UP[k] != null) sm.className = (ch > 0) === GOOD_UP[k] ? 'good' : 'bad';
+        f.append(sm);
+      }
+      return f;
+    };
+    const list = rows.map((r, i) => ({ r, prev: rows[i - 1] })).reverse();
+    const t = miniTable(['Kun', ...keys.map(k => DYN[k][0])], list.map(({ r, prev }) => [day(r.date) + ' ' + r.date.slice(0, 4), ...keys.map(k => cell(r, prev, k))]));
+    t.querySelector('table').classList.add('yd-dyn');
+    [...t.querySelectorAll('tbody tr')].forEach((tr, i) => {
+      if (!list[i] || !(list[i].r.cost > 0)) { [...tr.cells].forEach(c => c.classList.add('zero')); return; }
+      tr.className = 'yd-link'; tr.tabIndex = 0; tr.title = 'Shu kun pul qayerga ketganini ko\'rish';
+      tr.addEventListener('click', () => onDay(list[i].r.date)); tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') onDay(list[i].r.date); });
+    });
+    tableBox.textContent = ''; tableBox.append(t);
   }
 
   // ---- Kreativlar kutubxonasi ----
@@ -1836,7 +1979,22 @@ dash.calc('insights', {
     else QUERIES.forEach((id, i) => setTimeout(() => dash.refresh(id), i * 1500));
     stamp();
   };
-  document.getElementById('yd-refresh').addEventListener('click', () => refreshAll(true));
+  // Tugma: saqlangan eng oxirgi ma'lumotni yuklaydi va natijani aytadi (yangi bormi, yo'qmi)
+  const toast = (() => { const t = document.createElement('div'); t.className = 'yd-toast'; t.hidden = true; t.setAttribute('role', 'status'); document.body.append(t); return t; })();
+  const say = (text) => { toast.textContent = text; toast.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => { toast.hidden = true; }, 6000); };
+  document.getElementById('yd-refresh').addEventListener('click', async () => {
+    const before = dash._sha;
+    refreshAll(true);
+    if (!dash.requestFresh) return;
+    await new Promise(r => setTimeout(r, 300));
+    while (dash._busy) await new Promise(r => setTimeout(r, 300));
+    const dt = document.getElementById('yd-data-time').textContent.split(' · ')[0];
+    say(dash._sha && dash._sha !== before ? 'Yangi ma\'lumot yuklandi (' + dt + ').'
+      : 'Eng oxirgi ma\'lumot shu: ' + dt + '. Yandex\'dan har soatda olinadi, keyingisi ' + nextData() + ' da.');
+  });
+  const costTile = document.getElementById('yd-cost-tile');
+  costTile.addEventListener('click', openSpendDays);
+  costTile.addEventListener('keydown', (e) => { if (e.key === 'Enter') openSpendDays(); });
   setInterval(refreshAll, EVERY);
   stamp();
 
