@@ -1,22 +1,35 @@
 [
   {
     "CampaignId": "708246185",
-    "Status": "O'chiq",
-    "Created": null
+    "Status": "Yoniq",
+    "Created": null,
+    "Budgets": [
+      { "From": "2026-10-22", "Amount": 500000, "Period": "WEEK" },
+      { "From": "2026-10-29", "Amount": 250000, "Period": "WEEK" }
+    ]
   },
   {
     "CampaignId": "708793244",
     "Status": "O'chiq",
-    "Created": null
+    "Created": null,
+    "Budgets": [{ "From": null, "Amount": 100000, "Period": "WEEK" }]
   },
   {
     "CampaignId": "714525198",
     "Status": "O'chiq",
-    "Created": null
+    "Created": null,
+    "Budgets": [{ "From": null, "Amount": 110000, "Period": "WEEK" }]
   },
   {
     "CampaignId": "714305715",
     "Status": "O'chiq",
-    "Created": null
+    "Created": null,
+    "Budgets": [{ "From": null, "Amount": 110000, "Period": "WEEK" }]
+  },
+  {
+    "CampaignId": "714529832",
+    "Status": "O'chiq",
+    "Created": null,
+    "Budgets": [{ "From": null, "Amount": 110000, "Period": "WEEK" }]
   }
 ]

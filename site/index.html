@@ -336,6 +336,8 @@ window.dash = (() => {
 .yd-budget-two b { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .yd-budget-two .sub { font-size: 13px; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
 @media (max-width: 640px) { .yd-budget-two { grid-template-columns: 1fr; } }
+.yd-bud-limit { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.yd-bud-limit.over .yd-bar i { background: var(--color-bad); }
 .yd-bar.wide { width: 100%; height: 8px; }
 .yd-dyn td small { display: block; font-size: 11px; color: var(--color-fg-muted); }
 .yd-dyn td small.good { color: var(--color-ok); }
@@ -530,9 +532,10 @@ window.dash = (() => {
     <div class="yd-card yd-budget click" id="yd-budget-card" role="button" tabindex="0" title="Qaysi kampaniyaga qancha byudjet qo'yilgan, qancha ketgani va o'zgarishlar">
       <div class="yd-tools"><h3>Byudjet va rasxod</h3><span class="yd-note">kampaniyalar bo'yicha ›</span></div>
       <div class="yd-budget-two">
-        <div><span class="lbl">Kunlik rasxod (bugun)</span><b id="yd-bud-day">—</b><span class="sub" id="yd-bud-day-sub">—</span><span class="yd-bar wide"><i id="yd-bud-bar"></i></span></div>
+        <div><span class="lbl">Kunlik rasxod (<span id="yd-bud-day-lbl">bugun</span>)</span><b id="yd-bud-day">—</b><span class="sub" id="yd-bud-day-sub">—</span></div>
         <div><span class="lbl">Umumiy rasxod (<span id="yd-bud-range">tanlangan davr</span>)</span><b id="yd-bud-total">—</b><span class="sub" id="yd-bud-total-sub">—</span></div>
       </div>
+      <div class="yd-bud-limit"><span class="sub" id="yd-bud-limit">—</span><span class="yd-bar wide"><i id="yd-bud-bar"></i></span></div>
       <span class="yd-note" id="yd-bud-chg">—</span>
     </div>
     <div class="yd-grid two">
@@ -545,7 +548,7 @@ window.dash = (() => {
         <div class="yd-chart dash-skeleton" data-source="daily" id="yd-conv"></div>
       </div>
       <div class="yd-card yd-wide-card" id="dyn-card">
-        <div class="yd-tools"><div><h3>Kunlik dinamika</h3><p class="yd-note">Har kun oldingi kun bilan solishtirilgan. Kunni bossangiz, pul qaysi kampaniya, guruh va kreativga ketgani chiqadi.</p></div><div class="yd-seg yd-ctype" data-chart="yd-dyn" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
+        <div class="yd-tools"><div><h3>Kunlik dinamika</h3><p class="yd-note">Har kun bir kun oldingisi bilan solishtirilgan (masalan, 29-okt — 28-okt bilan). Kunni bossangiz, pul qaysi kampaniya, guruh va kreativga ketgani chiqadi.</p></div><div class="yd-seg yd-ctype" data-chart="yd-dyn" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
         <div class="yd-seg yd-dyn-m" data-chart="yd-dyn" role="group" aria-label="Ko'rsatkich"><button data-m="cost">Rasxod</button><button data-m="impressions">Ko'rsatish</button><button data-m="clicks">Klik</button><button data-m="ctr">CTR</button><button data-m="cpc">CPC</button><button data-m="conversions">Konv.</button><button data-m="cpa">CPA</button></div>
         <div class="yd-chart" data-source="daily" id="yd-dyn"></div>
         <div class="yd-scroll tall" id="yd-dyn-table"></div>
@@ -1769,17 +1772,25 @@ dash.calc('insights', {
   function renderBudgetCard() {
     const e = dash.data('entities'), p = dash.params();
     const set = (id, v) => { document.getElementById(id).textContent = v; };
-    if (e.status !== 'ok') { ['yd-bud-day', 'yd-bud-day-sub', 'yd-bud-total', 'yd-bud-total-sub', 'yd-bud-chg'].forEach(i => set(i, '—')); return; }
+    if (e.status !== 'ok') { ['yd-bud-day', 'yd-bud-day-sub', 'yd-bud-total', 'yd-bud-total-sub', 'yd-bud-chg', 'yd-bud-limit'].forEach(i => set(i, '—')); return; }
     const camps = e.data.filter(r => r.level === 'campaign'), on = camps.filter(r => r.status === 'Yoniq');
-    const td = today();
-    // Bugungi rasxod: hamma kampaniyalar bo'yicha (lifetime qatorlaridan)
+    const td = today(), yd = shift(td, -1);
+    // Kunlik rasxod: hamma kampaniyalar bo'yicha (lifetime qatorlaridan); bugungi ma'lumot hali kelmagan bo'lsa — kechagisi
     const l = dash.data('lifetime');
-    const dayCost = l.status === 'ok' ? l.data.reduce((a, r) => a + (r.Date === td ? r.Cost || 0 : 0), 0) : 0;
-    const withB = on.filter(r => r.budget != null && r.budget_period === 'kun'), limit = withB.reduce((a, r) => a + r.budget, 0);
-    set('yd-bud-day', som(dayCost));
-    set('yd-bud-day-sub', limit ? 'kunlik byudjet ' + som(limit) + ' · ' + d3.format('.0%')(dayCost / limit) + ' · qoldi ' + som(Math.max(0, limit - dayCost))
-      : on.length ? 'byudjet kiritilmagan' : 'yoniq kampaniya yo\'q');
-    document.getElementById('yd-bud-bar').style.width = (limit ? Math.min(100, 100 * dayCost / limit) : 0) + '%';
+    const costOn = (dt) => l.status === 'ok' ? l.data.reduce((a, r) => a + (r.Date === dt ? r.Cost || 0 : 0), 0) : 0;
+    const hasToday = l.status === 'ok' && l.data.some(r => r.Date === td && (r.Impressions || 0) > 0);
+    set('yd-bud-day-lbl', hasToday ? 'bugun, ' + day(td) : 'bugun ' + day(td) + ' — ma\'lumot hali kelmagan');
+    set('yd-bud-day', som(costOn(td)));
+    set('yd-bud-day-sub', 'kecha (' + day(yd) + '): ' + som(costOn(yd)));
+    // Byudjet: yoniq kampaniyalar; kunlik va haftalik alohida (hafta — dushanbadan)
+    const part = (per) => { const a = on.filter(r => r.budget != null && r.budget_period === per); return { n: a.length, limit: a.reduce((x, r) => x + r.budget, 0), used: a.reduce((x, r) => x + r.budget_used, 0) }; };
+    const wk = part('hafta'), dy = part('kun'), main = wk.n ? wk : dy;
+    const txt = [];
+    if (wk.n) txt.push('Haftalik byudjet ' + som(wk.limit) + ' · shu hafta (' + day(shift(td, -((new Date(td + 'T00:00:00Z').getUTCDay() + 6) % 7))) + ' dan) ishlatildi ' + som(wk.used) + ' (' + d3.format('.0%')(wk.used / wk.limit) + ') · qoldi ' + som(Math.max(0, wk.limit - wk.used)));
+    if (dy.n) txt.push('Kunlik byudjet ' + som(dy.limit) + ' · bugun ishlatildi ' + som(dy.used) + ' · qoldi ' + som(Math.max(0, dy.limit - dy.used)));
+    set('yd-bud-limit', txt.length ? txt.join('  ·  ') : on.length ? 'Yoniq kampaniyaning byudjeti kiritilmagan' : 'Yoniq kampaniya yo\'q');
+    document.querySelector('.yd-bud-limit').classList.toggle('over', main.limit > 0 && main.used > main.limit);
+    document.getElementById('yd-bud-bar').style.width = (main.limit ? Math.min(100, 100 * main.used / main.limit) : 0) + '%';
     const total = camps.reduce((a, r) => a + r.cost, 0), life = camps.reduce((a, r) => a + r.life_cost, 0);
     set('yd-bud-range', isDate(p.date_from) ? span(p.date_from, p.date_to) : 'tanlangan davr');
     set('yd-bud-total', som(total));
@@ -1798,11 +1809,11 @@ dash.calc('insights', {
         list = e.data.filter(r => r.level === 'campaign').sort((a, b) => (b.status === 'Yoniq') - (a.status === 'Yoniq') || b.cost - a.cost || (b.last_date || '').localeCompare(a.last_date || ''));
         const so = (v) => grp(Math.round(v)), l = dash.data('lifetime'), td = today();
         const todayOf = (c) => l.status === 'ok' ? l.data.reduce((a, r) => a + (r.Date === td && r.CampaignId === c.entity_id ? r.Cost || 0 : 0), 0) : 0;
-        const cur = miniTable(['Kampaniya', 'Holat', 'Byudjet, so\'m', 'Bugun rasxod', 'Qoldi', 'Davr rasxodi', 'Umumiy rasxod', 'Oldingi byudjet'], list.map(c => {
-          const pv = prevBudget(c), tc = todayOf(c);
-          return [c.name, c.status, c.budget == null ? 'kiritilmagan' : so(c.budget) + ' / ' + c.budget_period,
-            so(tc) + (c.budget != null && c.budget_period === 'kun' ? ' · ' + d3.format('.0%')(tc / c.budget) : ''),
-            c.budget != null && c.status === 'Yoniq' ? so(Math.max(0, c.budget - c.budget_used)) : '—',
+        const cur = miniTable(['Kampaniya', 'Holat', 'Byudjet, so\'m', 'Bugun rasxod', 'Ishlatildi (shu kun/hafta)', 'Qoldi', 'Davr rasxodi', 'Umumiy rasxod', 'Oldingi byudjet'], list.map(c => {
+          const pv = prevBudget(c), tc = todayOf(c), has = c.budget != null;
+          return [c.name, c.status, has ? so(c.budget) + ' / ' + c.budget_period : 'kiritilmagan', so(tc),
+            has ? so(c.budget_used) + ' · ' + d3.format('.0%')(c.budget_share) : '—',
+            has ? so(Math.max(0, c.budget - c.budget_used)) : '—',
             so(c.cost), so(c.life_cost), pv ? so(pv.amount) + (pv.to ? ' (' + day(pv.to) + ' gacha)' : '') : '—'];
         }));
         [...cur.querySelectorAll('tbody tr')].forEach((tr, i) => {
@@ -1990,17 +2001,21 @@ dash.calc('insights', {
       r => name + ': ' + fmt(r[m] || null) + ' · ' + som(r.cost) + ' · ' + count(r.clicks) + ' klik');
     // Jadval: yangi kun tepada; o'zgarish — oldingi kunga nisbatan (oldingi kunda qiymat bo'lmasa ko'rsatilmaydi)
     const keys = ['cost', 'impressions', 'clicks', 'ctr', 'cpc', 'conversions', 'cpa'];
+    const pending = (r) => r.date >= today() && !r.impressions && !r.cost;
     const cell = (r, prev, k) => {
-      const f = document.createDocumentFragment(); f.append(DYN[k][1](r[k]));
+      const f = document.createDocumentFragment();
+      if (pending(r)) { f.append('—'); return f; }
+      f.append(DYN[k][1](r[k]));
       if (r[k] != null && prev && prev[k]) {
         const raw = r[k] / prev[k] - 1, ch = Math.round(raw * 100) / 100, sm = el('small', null, (ch > 0 ? '↑ +' : ch < 0 ? '↓ −' : '') + d3.format('.0%')(Math.abs(ch)));
         if (ch && GOOD_UP[k] != null) sm.className = (ch > 0) === GOOD_UP[k] ? 'good' : 'bad';
+        sm.title = day(prev.date) + ' ga nisbatan (' + DYN[k][1](prev[k]) + ')';
         f.append(sm);
       }
       return f;
     };
     const list = rows.map((r, i) => ({ r, prev: rows[i - 1] })).reverse();
-    const t = miniTable(['Kun', ...keys.map(k => DYN[k][0])], list.map(({ r, prev }) => [day(r.date) + ' ' + r.date.slice(0, 4), ...keys.map(k => cell(r, prev, k))]));
+    const t = miniTable(['Kun', ...keys.map(k => DYN[k][0])], list.map(({ r, prev }) => [day(r.date) + ' ' + r.date.slice(0, 4) + (pending(r) ? ' · ma\'lumot hali kelmagan' : ''), ...keys.map(k => cell(r, prev, k))]));
     t.querySelector('table').classList.add('yd-dyn');
     [...t.querySelectorAll('tbody tr')].forEach((tr, i) => {
       if (!list[i] || !(list[i].r.cost > 0)) { [...tr.cells].forEach(c => c.classList.add('zero')); return; }
