@@ -7,8 +7,8 @@ soatlik vazifasi oxirgi kunlar hisobotlarini TSV qilib saqlaydi va shu skript bi
   python3 scripts/update_from_tsv.py --dir DIR --from 2026-10-28 --balance 345638.03 --available 245638.04 \\
       --base eski/data.json --out yangi/data.json
 
-DIR ichida sarlavhasiz TSV fayllar: stats.tsv, placements.tsv, audience.tsv, regions.tsv
-(ustunlar tartibi fetch_data.REPORTS dagidek). --from dan boshlab eski qatorlar yangisi bilan almashtiriladi.
+DIR ichida sarlavhasiz TSV fayllar: stats.tsv, placements.tsv, audience.tsv, regions.tsv, audience_place.tsv,
+region_place.tsv (ustunlar tartibi fetch_data.REPORTS dagidek; oxirgi ikkitasi Clicks > 0 filtri bilan; yo'q fayl o'tkaziladi). --from dan boshlab eski qatorlar yangisi bilan almashtiriladi.
 """
 import argparse
 import datetime
@@ -32,10 +32,14 @@ def main():
 
     d = json.loads(Path(a.base).read_text(encoding="utf-8"))
     for name, fields in f.REPORTS.items():
-        new = f.parse_tsv((Path(a.dir) / f"{name}.tsv").read_text(encoding="utf-8"), fields)
+        src = Path(a.dir) / f"{name}.tsv"
+        if not src.exists():  # bu hisobot berilmagan: eskisi qoladi
+            print(f"{name}: fayl yo'q, o'zgarmadi")
+            continue
+        new = f.parse_tsv(src.read_text(encoding="utf-8"), fields)
         if any(r["Date"] < a.cut for r in new):
             sys.exit(f"{name}: --from ({a.cut}) dan oldingi qator bor")
-        d[name] = [r for r in d[name] if r["Date"] < a.cut] + new
+        d[name] = [r for r in d.get(name, []) if r["Date"] < a.cut] + new
         tot = {m: round(sum(r[m] or 0 for r in new), 2) for m in f.METRICS}
         print(f"{name}: {len(new)} yangi qator, jami {tot}")
     if a.balance is not None:

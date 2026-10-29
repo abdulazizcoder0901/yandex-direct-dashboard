@@ -30,6 +30,13 @@ REPORTS = {
     "placements": ["Date", "Placement"] + METRICS,
     "audience": ["Date", "Age", "Gender"] + METRICS,
     "regions": ["Date", "LocationOfPresenceName"] + METRICS,
+    # Auditoriya va hudud bo'yicha qaysi kanallardan kelgani (faqat klik bo'lgan qatorlar: yosh/jins faqat klikda ma'lum)
+    "audience_place": ["Date", "Age", "Gender", "Placement"] + METRICS,
+    "region_place": ["Date", "LocationOfPresenceName", "Placement"] + METRICS,
+}
+REPORT_FILTERS = {
+    "audience_place": [{"Field": "Clicks", "Operator": "GREATER_THAN", "Values": ["0"]}],
+    "region_place": [{"Field": "Clicks", "Operator": "GREATER_THAN", "Values": ["0"]}],
 }
 TASHKENT = datetime.timezone(datetime.timedelta(hours=5))
 ROOT = Path(__file__).resolve().parent.parent
@@ -70,7 +77,7 @@ def get_account(token, login):
 
 def get_report(token, login, name, fields):
     body = {"params": {
-        "SelectionCriteria": {},
+        "SelectionCriteria": {"Filter": REPORT_FILTERS[name]} if name in REPORT_FILTERS else {},
         "FieldNames": fields,
         "ReportName": f"dashboard-{name}-" + datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%d%H%M%S"),
         "ReportType": "CUSTOM_REPORT",

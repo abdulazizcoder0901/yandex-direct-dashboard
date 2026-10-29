@@ -52,7 +52,9 @@ window.dash = (() => {
     stats_cmp: ['stats', 'cmp_from', 'cmp_to'],
     placements: ['placements', 'date_from', 'date_to'],
     audience: ['audience', 'date_from', 'date_to'],
-    regions: ['regions', 'date_from', 'date_to']
+    regions: ['regions', 'date_from', 'date_to'],
+    audience_place: ['audience_place', 'date_from', 'date_to'],
+    region_place: ['region_place', 'date_from', 'date_to']
   };
   const fire = () => listeners.forEach(fn => { try { fn(); } catch (e) { console.error(e); } });
   const source = (id) => {
@@ -100,6 +102,12 @@ window.dash = (() => {
       if (this._busy || Date.now() - (this._last || 0) < 20000) return;
       this._last = Date.now();
       this.load(this._url).catch(() => {});
+    },
+    // Yangi ma'lumot yozilganmi: data branchining SHA'si o'zgargan bo'lsagina qayta o'qiladi
+    async checkNew() {
+      if (this._busy) return;
+      const sha = await this._latestSha();
+      if (sha && sha !== this._sha) this.load(this._url).catch(() => {});
     },
     // Qayta o'qish (yuklanayotgan bo'lsa kutadi)
     reload() { if (!this._busy) this.load(this._url).catch(() => {}); },
