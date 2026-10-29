@@ -108,8 +108,13 @@ window.dash = (() => {
     async requestFresh() {
       if (this._busy) return;
       let res = null;
-      try { const r = await fetch('/api/refresh', { method: 'POST' }); res = r.ok ? await r.json() : null; } catch (e) {}
-      if (!res || !(res.started || res.running)) { this.reload(); return res; }
+      try { const r = await fetch('/api/refresh', { method: 'POST' }); res = await r.json(); } catch (e) {}
+      if (!res || !(res.started || res.running)) {
+        // So'rov yuborilmadi: oxirgi ma'lumot qayta o'qiladi va sababi aytiladi (serversiz, ya'ni kompyuterda sinashda jim)
+        await this.load(this._url).catch(() => {});
+        if (res && !res.ok) (this._failed || []).forEach(fn => fn(new Error('Yandex\'ga so\'rov yuborilmadi: ' + (res.reason || 'server xatosi'))));
+        return res;
+      }
       this._busy = true;
       const was = this._sha, t0 = Date.now(), LIMIT = 5 * 60 * 1000, TYPICAL = 90 * 1000;
       let failure = null;
