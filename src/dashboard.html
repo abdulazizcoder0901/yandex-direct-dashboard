@@ -1891,11 +1891,9 @@ dash.calc('insights', {
   const QUERIES = ['stats', 'stats_cmp', 'lifetime', 'placements', 'audience', 'regions', 'metrika', 'balance', 'videos', 'images'];
   const EVERY = 2 * 60 * 1000;
   const nextData = () => {
-    // Soatlik yangilash Toshkent vaqti 06:07–23:07 da boshlanadi va ~5 daqiqada yoziladi
+    // Soatlik yangilash har soat HH:07 da (kecha-kunduz) boshlanadi va ~5 daqiqada yoziladi
     const t = new Date(Date.now() + 5 * 3600e3), h = t.getUTCHours(), m = t.getUTCMinutes();
-    let nh = m < 12 ? h : h + 1;
-    if (nh < 6 || nh > 23) nh = 6;
-    return '~' + String(nh).padStart(2, '0') + ':12';
+    return '~' + String((m < 12 ? h : h + 1) % 24).padStart(2, '0') + ':12';
   };
   const stamp = () => { document.getElementById('yd-next').textContent = nextData(); };
   // fresh: tugma bosilganda Yandex'dan yangi so'rov (saytda); vaqt bo'yicha esa oxirgi ma'lumot qayta o'qiladi
