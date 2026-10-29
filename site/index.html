@@ -315,6 +315,8 @@ window.dash = (() => {
 .yd-chg.bad { color: var(--color-bad); }
 .yd-warn { color: var(--color-bad); }
 .yd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 16px; }
+.yd-grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 760px) { .yd-grid.two { grid-template-columns: 1fr; } }
 .yd-grid.three { grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr)); }
 .yd-card { background: var(--color-panel); border: 1px solid var(--color-border-line); border-radius: 14px; padding: 20px 22px; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 .yd-card h3 { font-size: 15px; font-weight: 500; margin: 0 0 4px; line-height: 1.4; }
@@ -516,7 +518,7 @@ window.dash = (() => {
         <span class="val dash-skeleton" data-source="totals" data-field="current" data-where="metric=ctr">—</span>
         <span class="sub yd-chg dash-skeleton" data-source="totals" data-field="change" data-where="metric=ctr">—</span></div>
     </div>
-    <div class="yd-grid">
+    <div class="yd-grid two">
       <div class="yd-card" id="spend-chart">
         <div class="yd-tools"><h3>Kunlik xarajat</h3><div class="yd-seg yd-ctype" data-chart="yd-spend" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
         <div class="yd-chart dash-skeleton" data-source="daily" id="yd-spend"></div>
