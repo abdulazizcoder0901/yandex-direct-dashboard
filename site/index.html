@@ -1522,7 +1522,8 @@ dash.calc('insights', {
   // "120 000 / 250 000 so'm · 48%" — shu kun (yoki hafta) ishlatilgan / belgilangan
   const dayY = (v) => v ? day(v) + ' ' + v.slice(0, 4) : '—';
   const prevBudget = (r) => { const h = r.budget_hist || [], i = h.findIndex(x => x.amount === r.budget && x.period === r.budget_period && (!x.from || x.from <= today()) && (!x.to || x.to >= today())); return i > 0 ? h[i - 1] : null; };
-  const budgetPrev = (r) => { const p = prevBudget(r); return p ? '. Oldin ' + som(p.amount) + ' edi' + (p.to ? ' (' + dayY(p.to) + ' gacha)' : '') : ''; };
+  const budgetSpan = (h) => h.from && h.to ? day(h.from) + ' – ' + day(h.to) : h.from ? day(h.from) + ' dan' : h.to ? day(h.to) + ' gacha' : '';
+  const budgetPrev = (r) => { const p = prevBudget(r); return p ? '. Oldin ' + som(p.amount) + ' edi' + (budgetSpan(p) ? ' (' + budgetSpan(p) + ')' : '') : ''; };
   const budgetText = (r) => r.budget == null ? '—' : grp(Math.round(r.budget_used)) + ' / ' + grp(Math.round(r.budget)) + ' so\'m · ' + d3.format('.0%')(r.budget_share);
   const CHILD = { campaign: 'adgroup', adgroup: 'ad' };
   let backTo = null;
@@ -1796,7 +1797,7 @@ dash.calc('insights', {
     set('yd-bud-total', som(total));
     set('yd-bud-total-sub', 'reklama boshidan jami ' + som(life));
     const last = budgetChanges(camps).find(x => x.prev);
-    set('yd-bud-chg', last ? 'Oxirgi o\'zgarish: ' + last.c.name + ' — ' + grp(last.prev.amount) + ' → ' + grp(last.h.amount) + ' so\'m (' + dayY(last.h.from) + ')'
+    set('yd-bud-chg', last ? 'Oxirgi o\'zgarish: ' + last.c.name + ' — ' + grp(last.prev.amount) + ' so\'m (' + budgetSpan(last.prev) + ') → ' + grp(last.h.amount) + ' so\'m (' + budgetSpan(last.h) + ')'
       : budgetChanges(camps).length ? 'Byudjet o\'zgarmagan' : 'Byudjet summalari hali kiritilmagan (Yandex API bermaydi)');
   }
   // Oyna: har bir kampaniya — byudjet, bugungi, davrdagi va umumiy rasxod; pastda o'zgarishlar tarixi
@@ -1814,7 +1815,7 @@ dash.calc('insights', {
           return [c.name, c.status, has ? so(c.budget) + ' / ' + c.budget_period : 'kiritilmagan', so(tc),
             has ? so(c.budget_used) + ' · ' + d3.format('.0%')(c.budget_share) : '—',
             has ? so(Math.max(0, c.budget - c.budget_used)) : '—',
-            so(c.cost), so(c.life_cost), pv ? so(pv.amount) + (pv.to ? ' (' + day(pv.to) + ' gacha)' : '') : '—'];
+            so(c.cost), so(c.life_cost), pv ? so(pv.amount) + (budgetSpan(pv) ? ' (' + budgetSpan(pv) + ')' : '') : '—'];
         }));
         [...cur.querySelectorAll('tbody tr')].forEach((tr, i) => {
           if (!list[i] || !(list[i].budget_hist || []).length) return;
