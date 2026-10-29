@@ -45,6 +45,10 @@ def main():
     if a.balance is not None:
         d["balance"] = [{"login": d.get("login"), "amount": a.balance,
                          "available": a.available if a.available is not None else a.balance, "currency": d.get("currency")}]
+    # Qo'lda kiritiladigan kampaniya ma'lumotlari (holat, byudjet tarixi) har safar repodagi fayldan olinadi
+    mc = f.ROOT / "data" / "manual_campaigns.json"
+    if mc.exists():
+        d["manual_campaigns"] = json.loads(mc.read_text(encoding="utf-8"))
     d["updated"] = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
     d["today"] = datetime.datetime.now(f.TASHKENT).date().isoformat()
     Path(a.out).write_text(json.dumps(d, ensure_ascii=False), encoding="utf-8")

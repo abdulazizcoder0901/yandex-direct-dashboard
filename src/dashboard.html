@@ -114,11 +114,12 @@
 .yd-wide-card { grid-column: 1 / -1; }
 .yd-budget { cursor: pointer; }
 .yd-budget:hover { border-color: #3a4152; }
-.yd-budget-nums { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
-.yd-budget-nums div { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.yd-budget-nums .lbl { font-size: 12px; color: var(--color-fg-muted); }
-.yd-budget-nums b { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
-@media (max-width: 760px) { .yd-budget-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.yd-budget-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 24px; }
+.yd-budget-two > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.yd-budget-two .lbl { font-size: 12px; color: var(--color-fg-muted); }
+.yd-budget-two b { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.yd-budget-two .sub { font-size: 13px; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .yd-budget-two { grid-template-columns: 1fr; } }
 .yd-bar.wide { width: 100%; height: 8px; }
 .yd-dyn td small { display: block; font-size: 11px; color: var(--color-fg-muted); }
 .yd-dyn td small.good { color: var(--color-ok); }
@@ -310,15 +311,13 @@
         <span class="val dash-skeleton" data-source="totals" data-field="current" data-where="metric=ctr">—</span>
         <span class="sub yd-chg dash-skeleton" data-source="totals" data-field="change" data-where="metric=ctr">—</span></div>
     </div>
-    <div class="yd-card yd-budget click" id="yd-budget-card" role="button" tabindex="0" title="Qaysi kampaniyaga qancha limit qo'yilgan va qancha ishlatilgani">
-      <div class="yd-tools"><h3>Byudjet (bugun)</h3><span class="yd-note">batafsil ›</span></div>
-      <div class="yd-budget-nums">
-        <div><span class="lbl">Kunlik limit (yoniq kampaniyalar)</span><b id="yd-bud-limit">—</b></div>
-        <div><span class="lbl">Bugun ishlatildi</span><b id="yd-bud-used">—</b></div>
-        <div><span class="lbl">Qoldi</span><b id="yd-bud-left">—</b></div>
-        <div><span class="lbl">Oxirgi o'zgarish</span><b id="yd-bud-chg">—</b></div>
+    <div class="yd-card yd-budget click" id="yd-budget-card" role="button" tabindex="0" title="Qaysi kampaniyaga qancha byudjet qo'yilgan, qancha ketgani va o'zgarishlar">
+      <div class="yd-tools"><h3>Byudjet va rasxod</h3><span class="yd-note">kampaniyalar bo'yicha ›</span></div>
+      <div class="yd-budget-two">
+        <div><span class="lbl">Kunlik rasxod (bugun)</span><b id="yd-bud-day">—</b><span class="sub" id="yd-bud-day-sub">—</span><span class="yd-bar wide"><i id="yd-bud-bar"></i></span></div>
+        <div><span class="lbl">Umumiy rasxod (<span id="yd-bud-range">tanlangan davr</span>)</span><b id="yd-bud-total">—</b><span class="sub" id="yd-bud-total-sub">—</span></div>
       </div>
-      <span class="yd-bar wide"><i id="yd-bud-bar"></i></span>
+      <span class="yd-note" id="yd-bud-chg">—</span>
     </div>
     <div class="yd-grid two">
       <div class="yd-card" id="spend-chart">
@@ -386,7 +385,7 @@
       </div>
       <div class="yd-card"><div class="yd-scroll">
         <table class="yd-table" id="yd-camp" data-source="entities" data-row-key="id">
-          <thead><tr><th data-field="name"><button data-k="name">Kampaniya</button></th><th data-field="status" class="yd-hide-narrow"><button data-k="status">Holat</button></th><th data-field="created_date" class="yd-hide-narrow"><button data-k="created_date">Yaratilgan</button></th><th data-field="first_date" class="yd-hide-narrow"><button data-k="first_date">Yoqilgan</button></th><th data-field="run_count" class="yd-hide-narrow"><button data-k="run_count">Yoqilish</button></th><th data-field="last_date" class="yd-hide-narrow"><button data-k="last_date">O'chgan</button></th><th data-field="cost"><button data-k="cost">Rasxod</button></th><th data-field="budget_share"><button data-k="budget_share" title="Bugun ishlatilgan / kunlik limit. ≈ — limit xarajatdan aniqlangan (pul shu summada to'xtagan kunlar bor)">Byudjet</button></th><th data-field="impressions" class="yd-hide-narrow"><button data-k="impressions">Ko'rsatish</button></th><th data-field="clicks"><button data-k="clicks">Klik</button></th><th data-field="ctr" class="yd-hide-narrow"><button data-k="ctr">CTR</button></th><th data-field="cpc" class="yd-hide-narrow"><button data-k="cpc">CPC</button></th><th data-field="conversions"><button data-k="conversions">Konv.</button></th><th data-field="cr" class="yd-hide-narrow"><button data-k="cr">Lid %</button></th><th data-field="cpa"><button data-k="cpa">CPA</button></th><th data-field="roi" class="yd-hide-narrow"><button data-k="roi">ROI</button></th></tr></thead>
+          <thead><tr><th data-field="name"><button data-k="name">Kampaniya</button></th><th data-field="status" class="yd-hide-narrow"><button data-k="status">Holat</button></th><th data-field="created_date" class="yd-hide-narrow"><button data-k="created_date">Yaratilgan</button></th><th data-field="first_date" class="yd-hide-narrow"><button data-k="first_date">Yoqilgan</button></th><th data-field="run_count" class="yd-hide-narrow"><button data-k="run_count">Yoqilish</button></th><th data-field="last_date" class="yd-hide-narrow"><button data-k="last_date">O'chgan</button></th><th data-field="cost"><button data-k="cost">Rasxod</button></th><th data-field="budget_share"><button data-k="budget_share" title="Bugun (yoki shu hafta) ishlatilgan / kabinetda belgilangan byudjet">Byudjet</button></th><th data-field="impressions" class="yd-hide-narrow"><button data-k="impressions">Ko'rsatish</button></th><th data-field="clicks"><button data-k="clicks">Klik</button></th><th data-field="ctr" class="yd-hide-narrow"><button data-k="ctr">CTR</button></th><th data-field="cpc" class="yd-hide-narrow"><button data-k="cpc">CPC</button></th><th data-field="conversions"><button data-k="conversions">Konv.</button></th><th data-field="cr" class="yd-hide-narrow"><button data-k="cr">Lid %</button></th><th data-field="cpa"><button data-k="cpa">CPA</button></th><th data-field="roi" class="yd-hide-narrow"><button data-k="roi">ROI</button></th></tr></thead>
           <tbody></tbody>
         </table>
       </div></div>
@@ -718,23 +717,16 @@ dash.calc('entities', {
         status,
         created_date: t.level === 'campaign' && c && c.Created ? c.Created : null,
         ...(() => {
-          // Byudjet API'da yo'q. Kunlik limit xarajatdan aniqlanadi: kun xarajati yaxlit summa (masalan, 200 000,00) bo'lsa,
-          // reklama limitga yetib to'xtagan. Bunday kunlar ketma-ketligi — limit tarixi (qachon qancha bo'lgan, qachon o'zgargan).
-          // Kiritilgan byudjet (manual_campaigns.json, Budget) bo'lsa, hozirgisi o'sha.
-          const hist = [];
-          if (t.level === 'campaign') for (const [dd, v] of Object.entries(daycost).sort((x, y) => x[0] < y[0] ? -1 : 1)) {
-            const a = Math.round(v / 1000) * 1000;
-            if (v < 1000 || Math.abs(v - a) >= 0.05) continue;
-            const last = hist[hist.length - 1];
-            if (last && last.amount === a) { last.to = dd; last.hits += 1; } else hist.push({ amount: a, from: dd, to: dd, hits: 1 });
-          }
-          let b = t.level === 'campaign' && c && c.Budget && c.Budget.Amount > 0 ? { ...c.Budget, src: 'kiritilgan' } : null;
-          if (!b && hist.length) b = { Amount: hist[hist.length - 1].amount, Period: 'DAY', src: 'taxmin' };
-          if (!b) return { budget: null, budget_period: null, budget_used: null, budget_share: null, budget_src: null, budget_hits: null, budget_hist: hist };
-          const from = b.Period === 'DAY' ? todayT : weekStart;
+          // Byudjet API'da yo'q: kabinetdagi aniq summalar manual_campaigns.json'ga kiritiladi.
+          // Budgets: [{ From: '2026-10-22', Amount: 500000, Period: 'DAY' | 'WEEK' }, ...] — har biri o'sha sanadan amal qiladi
+          const list = t.level === 'campaign' && c ? (c.Budgets || (c.Budget ? [{ From: null, ...c.Budget }] : [])).filter(x => x.Amount > 0) : [];
+          const hist = list.slice().sort((x, y) => (x.From || '') < (y.From || '') ? -1 : 1)
+            .map((x, i, a) => ({ amount: x.Amount, period: x.Period === 'WEEK' ? 'hafta' : 'kun', from: x.From || null, to: a[i + 1] && a[i + 1].From ? shift(a[i + 1].From, -1) : null }));
+          const b = hist.filter(h => !h.from || h.from <= todayT).pop();
+          if (!b) return { budget: null, budget_period: null, budget_used: null, budget_share: null, budget_hist: hist };
+          const from = b.period === 'kun' ? todayT : weekStart;
           const used = Object.entries(daycost).reduce((a, [dd, v]) => a + (dd >= from && dd <= todayT ? v : 0), 0);
-          const hits = b.Period === 'DAY' ? Object.values(daycost).filter(v => v >= b.Amount * 0.99).length : null;
-          return { budget: b.Amount, budget_period: b.Period === 'DAY' ? 'kun' : 'hafta', budget_used: Math.round(used * 100) / 100, budget_share: used / b.Amount, budget_src: b.src, budget_hits: hits, budget_hist: hist };
+          return { budget: b.amount, budget_period: b.period, budget_used: Math.round(used * 100) / 100, budget_share: used / b.amount, budget_hist: hist };
         })(),
         ctr: t.impressions ? t.clicks / t.impressions : null,
         cpc: t.clicks ? cost / t.clicks : null,
@@ -1308,12 +1300,11 @@ dash.calc('insights', {
   const ENT_COLS = ['status', 'created_date', 'first_date', 'run_count', 'last_date', 'cost', 'impressions', 'clicks', 'ctr', 'cpc', 'conversions', 'cr', 'cpa', 'roi'];
   const LEVEL_NAME = { campaign: 'Kampaniya', adgroup: 'Guruh (ads set)', ad: 'Kreativ' };
   const CAMP_COLS = [...ENT_COLS.slice(0, ENT_COLS.indexOf('cost') + 1), 'budget_share', ...ENT_COLS.slice(ENT_COLS.indexOf('cost') + 1)];
-  // "120 000 / 500 000 so'm · 24%" — shu kun yoki haftada ishlatilgan / belgilangan
-  // Oldingi limit: "Oldin 40 000 so'm edi (25-mar 2026 gacha)"
-  const budgetPrev = (r) => { const h = r.budget_hist || []; const prev = h.filter(x => x.amount !== r.budget).pop();
-    return prev ? '. Oldin ' + som(prev.amount) + ' edi (' + dayY(prev.to) + ' gacha)' : ''; };
-  const dayY = (v) => day(v) + ' ' + v.slice(0, 4);
-  const budgetText = (r) => r.budget == null ? '—' : grp(Math.round(r.budget_used)) + ' / ' + (r.budget_src === 'taxmin' ? '≈' : '') + grp(Math.round(r.budget)) + ' so\'m · ' + d3.format('.0%')(r.budget_share);
+  // "120 000 / 250 000 so'm · 48%" — shu kun (yoki hafta) ishlatilgan / belgilangan
+  const dayY = (v) => v ? day(v) + ' ' + v.slice(0, 4) : '—';
+  const prevBudget = (r) => { const h = r.budget_hist || [], i = h.findIndex(x => x.amount === r.budget && x.period === r.budget_period && (!x.from || x.from <= today()) && (!x.to || x.to >= today())); return i > 0 ? h[i - 1] : null; };
+  const budgetPrev = (r) => { const p = prevBudget(r); return p ? '. Oldin ' + som(p.amount) + ' edi' + (p.to ? ' (' + dayY(p.to) + ' gacha)' : '') : ''; };
+  const budgetText = (r) => r.budget == null ? '—' : grp(Math.round(r.budget_used)) + ' / ' + grp(Math.round(r.budget)) + ' so\'m · ' + d3.format('.0%')(r.budget_share);
   const CHILD = { campaign: 'adgroup', adgroup: 'ad' };
   let backTo = null;
   document.getElementById('yd-back').addEventListener('click', () => {
@@ -1430,7 +1421,7 @@ dash.calc('insights', {
         if (c === 'tip') { td.textContent = ''; if (r.level === 'ad') td.append(tipChip(r)); }
         if (c === 'budget_share') {
           td.textContent = budgetText(r);
-          td.title = r.budget == null ? 'Byudjet aniqlanmadi: kunlik xarajat hech qachon limitga yetmagan' : (r.budget_src === 'taxmin' ? 'Taxminiy kunlik limit (xarajat shu summada to\'xtagan kunlar: ' + r.budget_hits + ')' : 'Bir ' + r.budget_period + 'lik byudjet') + ': ' + som(r.budget) + '. Bugun ishlatildi ' + som(r.budget_used) + ', qoldi ' + som(Math.max(0, r.budget - r.budget_used)) + budgetPrev(r);
+          td.title = r.budget == null ? 'Byudjet kiritilmagan' : 'Bir ' + r.budget_period + 'lik byudjet: ' + som(r.budget) + '. ' + (r.budget_period === 'kun' ? 'Bugun' : 'Shu hafta') + ' ishlatildi ' + som(r.budget_used) + ', qoldi ' + som(Math.max(0, r.budget - r.budget_used)) + budgetPrev(r);
           if (r.budget_share >= 0.9) td.classList.add('yd-warn'); else if (r.budget == null) td.classList.add('zero');
         }
       }
@@ -1474,9 +1465,8 @@ dash.calc('insights', {
     st.textContent = sel.status; st.classList.toggle('on', sel.status === 'Yoniq');
     document.getElementById('yd-ent-kind').textContent = LEVEL_NAME[sel.level] + ' · ID ' + sel.entity_id;
     document.getElementById('yd-ent-budget-row').hidden = sel.level !== 'campaign';
-    document.getElementById('yd-ent-budget').textContent = sel.budget == null ? 'aniqlanmadi (kunlik xarajat limitga yetmagan)'
-      : (sel.budget_src === 'taxmin' ? 'kunlik limit ≈ ' : 'bir ' + sel.budget_period + 'ga ') + som(sel.budget) + ' · ' + (sel.budget_period === 'kun' ? 'bugun' : 'shu hafta') + ' ishlatildi ' + som(sel.budget_used) + ' (' + d3.format('.0%')(sel.budget_share) + ') · qoldi ' + som(Math.max(0, sel.budget - sel.budget_used))
-        + (sel.budget_hits ? ' · limitga yetgan kunlar: ' + sel.budget_hits : '') + budgetPrev(sel);
+    document.getElementById('yd-ent-budget').textContent = sel.budget == null ? 'kiritilmagan'
+      : 'bir ' + sel.budget_period + 'ga ' + som(sel.budget) + ' · ' + (sel.budget_period === 'kun' ? 'bugun' : 'shu hafta') + ' ishlatildi ' + som(sel.budget_used) + ' (' + d3.format('.0%')(sel.budget_share) + ') · qoldi ' + som(Math.max(0, sel.budget - sel.budget_used)) + budgetPrev(sel);
     const bh = document.getElementById('yd-ent-budget-hist');
     bh.hidden = !(sel.budget_hist && sel.budget_hist.length);
     bh.textContent = (sel.budget_hist || []).length > 1 ? (sel.budget_hist.length - 1) + ' marta o\'zgargan · tarix' : 'tarix';
@@ -1553,55 +1543,63 @@ dash.calc('insights', {
     if (!rows.length) { const td = tb.insertRow().insertCell(); td.colSpan = heads.length; td.className = 'yd-note'; td.textContent = 'Ma\'lumot yo\'q.'; }
     wrap.append(t); return wrap;
   };
-  // Byudjet: yoniq kampaniyalarning bugungi limiti, ishlatilgani, qolgani va oxirgi o'zgarish
-  const lastChange = (camps) => {
-    let best = null;
-    for (const c of camps) (c.budget_hist || []).forEach((h, i, a) => { if (i && (!best || h.from > best.h.from)) best = { c, h, prev: a[i - 1] }; });
-    return best;
+  // Byudjet va rasxod: bugungi rasxod (yoniq kampaniyalar byudjetiga nisbatan) va tanlangan davrdagi umumiy rasxod
+  const budgetChanges = (camps) => {
+    const out = [];
+    for (const c of camps) (c.budget_hist || []).forEach((h, i, a) => out.push({ c, h, prev: a[i - 1] || null }));
+    return out.sort((x, y) => (x.h.from || '') < (y.h.from || '') ? 1 : -1);
   };
+  const chgText = (h, p) => { if (!p) return 'birinchi'; const x = h.amount / p.amount - 1; return grp(p.amount) + ' → ' + grp(h.amount) + ' (' + (x > 0 ? '↑ +' : '↓ −') + d3.format('.0%')(Math.abs(x)) + ')'; };
   function renderBudgetCard() {
-    const e = dash.data('entities'), ids = ['yd-bud-limit', 'yd-bud-used', 'yd-bud-left', 'yd-bud-chg'];
-    if (e.status !== 'ok') { ids.forEach(i => { document.getElementById(i).textContent = '—'; }); return; }
-    const camps = e.data.filter(r => r.level === 'campaign'), on = camps.filter(r => r.status === 'Yoniq' && r.budget != null && r.budget_period === 'kun');
-    const limit = on.reduce((a, r) => a + r.budget, 0), used = on.reduce((a, r) => a + r.budget_used, 0);
-    document.getElementById('yd-bud-limit').textContent = on.length ? (on.some(r => r.budget_src === 'taxmin') ? '≈ ' : '') + som(limit) : 'yoniq kampaniya yo\'q';
-    document.getElementById('yd-bud-used').textContent = on.length ? som(used) + ' · ' + d3.format('.0%')(limit ? used / limit : 0) : '—';
-    document.getElementById('yd-bud-left').textContent = on.length ? som(Math.max(0, limit - used)) : '—';
-    const lc = lastChange(camps);
-    document.getElementById('yd-bud-chg').textContent = lc ? grp(lc.prev.amount) + ' → ' + grp(lc.h.amount) + ' so\'m · ' + dayY(lc.h.from) : 'o\'zgarmagan';
-    document.getElementById('yd-bud-bar').style.width = (limit ? Math.min(100, 100 * used / limit) : 0) + '%';
+    const e = dash.data('entities'), p = dash.params();
+    const set = (id, v) => { document.getElementById(id).textContent = v; };
+    if (e.status !== 'ok') { ['yd-bud-day', 'yd-bud-day-sub', 'yd-bud-total', 'yd-bud-total-sub', 'yd-bud-chg'].forEach(i => set(i, '—')); return; }
+    const camps = e.data.filter(r => r.level === 'campaign'), on = camps.filter(r => r.status === 'Yoniq');
+    const td = today();
+    // Bugungi rasxod: hamma kampaniyalar bo'yicha (lifetime qatorlaridan)
+    const l = dash.data('lifetime');
+    const dayCost = l.status === 'ok' ? l.data.reduce((a, r) => a + (r.Date === td ? r.Cost || 0 : 0), 0) : 0;
+    const withB = on.filter(r => r.budget != null && r.budget_period === 'kun'), limit = withB.reduce((a, r) => a + r.budget, 0);
+    set('yd-bud-day', som(dayCost));
+    set('yd-bud-day-sub', limit ? 'kunlik byudjet ' + som(limit) + ' · ' + d3.format('.0%')(dayCost / limit) + ' · qoldi ' + som(Math.max(0, limit - dayCost))
+      : on.length ? 'byudjet kiritilmagan' : 'yoniq kampaniya yo\'q');
+    document.getElementById('yd-bud-bar').style.width = (limit ? Math.min(100, 100 * dayCost / limit) : 0) + '%';
+    const total = camps.reduce((a, r) => a + r.cost, 0), life = camps.reduce((a, r) => a + r.life_cost, 0);
+    set('yd-bud-range', isDate(p.date_from) ? span(p.date_from, p.date_to) : 'tanlangan davr');
+    set('yd-bud-total', som(total));
+    set('yd-bud-total-sub', 'reklama boshidan jami ' + som(life));
+    const last = budgetChanges(camps).find(x => x.prev);
+    set('yd-bud-chg', last ? 'Oxirgi o\'zgarish: ' + last.c.name + ' — ' + grp(last.prev.amount) + ' → ' + grp(last.h.amount) + ' so\'m (' + dayY(last.h.from) + ')'
+      : budgetChanges(camps).length ? 'Byudjet o\'zgarmagan' : 'Byudjet summalari hali kiritilmagan (Yandex API bermaydi)');
   }
-  // Kunlik limit tarixi: bitta kampaniya yoki hammasi (sanasi bo'yicha, yangisi tepada)
+  // Oyna: har bir kampaniya — byudjet, bugungi, davrdagi va umumiy rasxod; pastda o'zgarishlar tarixi
   function openBudget(list) {
     const one = list.length === 1;
-    openModal(one ? list[0].name + ': byudjet tarixi' : 'Byudjet o\'zgarishlari', true, (body) => {
+    openModal(one ? list[0].name + ': byudjet tarixi' : 'Byudjet va rasxod', true, (body) => {
       if (!one) {
         const e = dash.data('entities');
         if (e.status !== 'ok') { body.append(el('p', 'yd-note', 'Yuklanmoqda…')); return; }
-        list = e.data.filter(r => r.level === 'campaign').sort((a, b) => (b.status === 'Yoniq') - (a.status === 'Yoniq') || (b.budget_used || 0) - (a.budget_used || 0) || (b.last_date || '').localeCompare(a.last_date || ''));
-        const so = (v) => grp(Math.round(v));
-        const cur = miniTable(['Kampaniya', 'Holat', 'Kunlik limit, so\'m', 'Bugun ishlatildi', 'Qoldi', 'Oldingi limit'], list.map(c => {
-          const prev = (c.budget_hist || []).filter(x => x.amount !== c.budget).pop(), on = c.budget != null && c.status === 'Yoniq';
-          return [c.name, c.status, c.budget == null ? 'aniqlanmadi' : (c.budget_src === 'taxmin' ? '≈ ' : '') + so(c.budget),
-            on ? so(c.budget_used) + ' · ' + d3.format('.0%')(c.budget_share) : '—', on ? so(Math.max(0, c.budget - c.budget_used)) : '—',
-            prev ? so(prev.amount) + ' (' + day(prev.to) + ' gacha)' : '—'];
+        list = e.data.filter(r => r.level === 'campaign').sort((a, b) => (b.status === 'Yoniq') - (a.status === 'Yoniq') || b.cost - a.cost || (b.last_date || '').localeCompare(a.last_date || ''));
+        const so = (v) => grp(Math.round(v)), l = dash.data('lifetime'), td = today();
+        const todayOf = (c) => l.status === 'ok' ? l.data.reduce((a, r) => a + (r.Date === td && r.CampaignId === c.entity_id ? r.Cost || 0 : 0), 0) : 0;
+        const cur = miniTable(['Kampaniya', 'Holat', 'Byudjet, so\'m', 'Bugun rasxod', 'Qoldi', 'Davr rasxodi', 'Umumiy rasxod', 'Oldingi byudjet'], list.map(c => {
+          const pv = prevBudget(c), tc = todayOf(c);
+          return [c.name, c.status, c.budget == null ? 'kiritilmagan' : so(c.budget) + ' / ' + c.budget_period,
+            so(tc) + (c.budget != null && c.budget_period === 'kun' ? ' · ' + d3.format('.0%')(tc / c.budget) : ''),
+            c.budget != null && c.status === 'Yoniq' ? so(Math.max(0, c.budget - c.budget_used)) : '—',
+            so(c.cost), so(c.life_cost), pv ? so(pv.amount) + (pv.to ? ' (' + day(pv.to) + ' gacha)' : '') : '—'];
         }));
         [...cur.querySelectorAll('tbody tr')].forEach((tr, i) => {
           if (!list[i] || !(list[i].budget_hist || []).length) return;
-          tr.className = 'yd-link'; tr.tabIndex = 0; tr.title = 'Shu kampaniya limiti tarixi';
+          tr.className = 'yd-link'; tr.tabIndex = 0; tr.title = 'Shu kampaniya byudjeti tarixi';
           tr.addEventListener('click', () => openBudget([list[i]]));
         });
-        body.append(el('p', 'yd-take', 'Har bir kampaniyaga qo\'yilgan kunlik limit va bugun qanchasi ishlatilgani'), cur, el('h3', 'yd-sub-head', 'O\'zgarishlar tarixi'));
+        body.append(el('p', 'yd-take', 'Har bir kampaniya: belgilangan byudjet, bugun, tanlangan davrda va reklama boshidan qancha ketgani'), cur, el('h3', 'yd-sub-head', 'Byudjet o\'zgarishlari'));
       }
-      const rows = [];
-      for (const c of list) (c.budget_hist || []).forEach((h, i, a) => rows.push({ c, h, prev: a[i - 1], cur: i === a.length - 1 }));
-      rows.sort((x, y) => x.h.from < y.h.from ? 1 : -1);
-      const chg = (h, p) => { if (!p) return 'birinchi'; const x = h.amount / p.amount - 1; return (x > 0 ? '↑ +' : '↓ −') + d3.format('.0%')(Math.abs(x)) + ' (' + grp(p.amount) + ' → ' + grp(h.amount) + ')'; };
-      const t = miniTable([...(one ? [] : ['Kampaniya']), 'Kunlik limit, so\'m', 'O\'zgarish', 'Birinchi', 'Oxirgi', 'Limitga yetgan'],
-        rows.map(({ c, h, prev, cur }) => [...(one ? [] : [c.name]), grp(h.amount) + (cur ? ' · hozirgi' : ''), chg(h, prev), dayY(h.from), dayY(h.to), count(h.hits) + ' kun']));
-      body.append(t);
-      if (one && list[0].budget_src === 'kiritilgan') body.append(el('p', 'yd-take', 'Hozirgi kiritilgan byudjet: bir ' + list[0].budget_period + 'ga ' + som(list[0].budget)));
-      body.append(el('p', 'yd-note', 'Yandex API byudjet tarixini bermaydi. Limit xarajatdan aniqlanadi: kun xarajati aynan yaxlit summada (masalan, 200 000,00 so\'m) to\'xtagan bo\'lsa, o\'sha kungi kunlik limit shu. Limitga yetmagan kunlarda limit ko\'rinmaydi, shuning uchun o\'zgarish sanasi — limit yangi summada birinchi marta ko\'ringan kun.'));
+      const rows = budgetChanges(list);
+      body.append(miniTable([...(one ? [] : ['Kampaniya']), 'Byudjet, so\'m', 'O\'zgarish', 'Qachondan', 'Qachongacha'],
+        rows.map(({ c, h, prev }) => [...(one ? [] : [c.name]), grp(h.amount) + ' / ' + h.period, chgText(h, prev), h.from ? dayY(h.from) : '—', h.to ? dayY(h.to) : 'hozir'])));
+      body.append(el('p', 'yd-note', 'Yandex API Telegram kampaniyalarining byudjetini va uning tarixini bermaydi, shuning uchun summalar kabinetdagidek qo\'lda kiritilgan.'));
     });
   }
   document.getElementById('yd-budget-all').addEventListener('click', () => openBudget([]));
