@@ -110,9 +110,10 @@ window.dash = (() => {
       let res = null;
       try { const r = await fetch('/api/refresh', { method: 'POST' }); res = await r.json(); } catch (e) {}
       if (!res || !(res.started || res.running)) {
-        // So'rov yuborilmadi: oxirgi ma'lumot qayta o'qiladi va sababi aytiladi (serversiz, ya'ni kompyuterda sinashda jim)
+        // So'rov yuborilmadi: oxirgi ma'lumot qayta o'qiladi. Token sozlanmagan bo'lsa jim
+        // (ma'lumotni soatlik vazifa yangilab turadi); boshqa server xatosi bo'lsa sababi aytiladi
         await this.load(this._url).catch(() => {});
-        if (res && !res.ok) (this._failed || []).forEach(fn => fn(new Error('Yandex\'ga so\'rov yuborilmadi: ' + (res.reason || 'server xatosi'))));
+        if (res && !res.ok && res.code !== 'no_token') (this._failed || []).forEach(fn => fn(new Error('Yandex\'ga so\'rov yuborilmadi: ' + (res.reason || 'server xatosi'))));
         return res;
       }
       this._busy = true;

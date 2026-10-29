@@ -6,7 +6,7 @@ const WORKFLOW = 'update.yml';
 
 export async function dispatch(source) {
   const token = process.env.GH_ACTIONS_TOKEN;
-  if (!token) return { ok: false, reason: 'GH_ACTIONS_TOKEN berilmagan' };
+  if (!token) return { ok: false, code: 'no_token', reason: 'GH_ACTIONS_TOKEN berilmagan' };
   const headers = {
     Authorization: `Bearer ${token}`,
     Accept: 'application/vnd.github+json',
