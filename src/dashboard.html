@@ -131,6 +131,10 @@
 .yd-dyn-legend { margin: 0; }
 .yd-dyn-tip { position: fixed; z-index: 70; max-width: min(320px, calc(100% - 16px)); background: #1c2030; color: #e8eaf0; border: 1px solid #2c3140; border-radius: 10px; padding: 8px 12px; font-size: 12px; line-height: 1.45; box-shadow: 0 8px 24px rgba(0,0,0,.5); pointer-events: none; font-variant-numeric: tabular-nums; }
 .yd-dyn-tip[hidden] { display: none; }
+.yd-dyn-tip { display: flex; flex-direction: column; gap: 3px; }
+.yd-dyn-tip b { font-weight: 600; }
+.yd-dyn-tip b.good { color: var(--color-ok); }
+.yd-dyn-tip b.bad { color: var(--color-bad); }
 .yd-search { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--color-border-line); border-radius: 10px; background: var(--color-bg); color: var(--color-fg); min-width: 0; flex: 0 1 16rem; }
 .yd-scroll { overflow: auto; }
 .yd-scroll.tall { max-height: 32rem; }
@@ -340,7 +344,7 @@
         <div class="yd-tools"><div><h3>Kunlik dinamika</h3><p class="yd-note">Har kun bir kun oldingisi bilan solishtirilgan (masalan, 29-okt — 28-okt bilan). Kunni bossangiz, pul qaysi kampaniya, guruh va kreativga ketgani chiqadi.</p></div><div class="yd-seg yd-ctype" data-chart="yd-dyn" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
         <div class="yd-seg yd-dyn-m" data-chart="yd-dyn" role="group" aria-label="Ko'rsatkich"><button data-m="cost">Rasxod</button><button data-m="impressions">Ko'rsatish</button><button data-m="clicks">Klik</button><button data-m="ctr">CTR</button><button data-m="cpc">CPC</button><button data-m="conversions">Konv.</button><button data-m="cpa">CPA</button></div>
         <div class="yd-chart" data-source="daily" id="yd-dyn"></div>
-        <div class="yd-scroll tall" id="yd-dyn-table"></div>
+        <div id="yd-dyn-table"></div>
       </div>
     </div>
   </section>
@@ -444,7 +448,7 @@
         <div class="yd-tools"><div><h3>Kunlik dinamika</h3><p class="yd-note">Kunni bossangiz, o'sha kungi rasxod guruh va kreativlarga bo'lib ko'rsatiladi.</p></div><div class="yd-seg yd-ctype" data-chart="yd-ent-chart" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
         <div class="yd-seg yd-dyn-m" data-chart="yd-ent-chart" role="group" aria-label="Ko'rsatkich"><button data-m="cost">Rasxod</button><button data-m="impressions">Ko'rsatish</button><button data-m="clicks">Klik</button><button data-m="ctr">CTR</button><button data-m="cpc">CPC</button><button data-m="conversions">Konv.</button><button data-m="cpa">CPA</button></div>
         <div class="yd-chart" data-source="stats" id="yd-ent-chart"></div>
-        <div class="yd-scroll tall" id="yd-ent-dyn-table"></div>
+        <div id="yd-ent-dyn-table"></div>
       </div>
       <div class="yd-card" id="yd-children-card">
         <div class="yd-tools">
@@ -1802,8 +1806,13 @@ dash.calc('insights', {
         if (ch && GOOD_UP[k] != null) sm.className = (ch > 0) === GOOD_UP[k] ? 'good' : 'bad';
         // CTR kichik: hisob ko'rinishi uchun 3 xona (0.024%)
         const full = k === 'ctr' ? d3.format('.3%') : DYN[k][1], num = (v) => full(v).replace(' so\'m', '');
-        sm.dataset.tip = DYN[k][0] + ': ' + day(prev.date) + ' — ' + full(prev[k]) + ', ' + day(r.date) + ' — ' + full(r[k]) + '. '
-          + num(r[k]) + ' ÷ ' + num(prev[k]) + ' × 100 = ' + d3.format('.0%')(ratio) + (ch > 0 ? ' (' + d3.format('.0%')(ch) + ' ko\'p)' : ch < 0 ? ' (' + d3.format('.0%')(-ch) + ' kam)' : ' (o\'zgarmagan)');
+        // Izoh: sarlavha (nimaga nisbatan), ikki kun qiymati, formula, natija
+        sm.dataset.tip = JSON.stringify([
+          DYN[k][0] + ': ' + day(r.date) + ', ' + day(prev.date) + ' ga nisbatan',
+          day(prev.date) + ': ' + full(prev[k]) + '  →  ' + day(r.date) + ': ' + full(r[k]),
+          'Formula: ' + num(r[k]) + ' ÷ ' + num(prev[k]) + ' × 100 = ' + d3.format('.0%')(ratio),
+          'Natija: ' + (ch > 0 ? 'oldingi kundan ' + d3.format('.0%')(ch) + ' ko\'p' : ch < 0 ? 'oldingi kundan ' + d3.format('.0%')(-ch) + ' kam' : 'o\'zgarmagan'),
+          sm.className || '']);
         f.append(sm);
       }
       return f;
@@ -1813,14 +1822,15 @@ dash.calc('insights', {
     t.querySelector('table').classList.add('yd-dyn');
     [...t.querySelectorAll('tbody tr')].forEach((tr, i) => {
       if (!list[i] || !(list[i].r.cost > 0)) { [...tr.cells].forEach(c => c.classList.add('zero')); return; }
-      tr.className = 'yd-link'; tr.tabIndex = 0; tr.title = 'Shu kun pul qayerga ketganini ko\'rish';
+      tr.className = 'yd-link'; tr.tabIndex = 0;
       tr.addEventListener('click', () => onDay(list[i].r.date)); tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') onDay(list[i].r.date); });
     });
     tableBox.textContent = ''; tableBox.append(el('p', 'yd-note yd-dyn-legend', 'Foiz = shu kun ÷ bir kun oldingi × 100. Masalan, 11 klikdan keyin 6 klik: 6 ÷ 11 × 100 = 55%. 100% dan kam — kamaygan (↓), ko\'p — oshgan (↑). Foiz ustiga olib borsangiz (telefonda bossangiz), hisobi chiqadi.'), t);
   }
   const dynTip = (() => { const n = el('div', 'yd-dyn-tip'); n.hidden = true; document.body.append(n); return n; })();
   const showDynTip = (sm) => {
-    dynTip.textContent = sm.dataset.tip; dynTip.hidden = false;
+    const [title, vals, formula, result, cls] = JSON.parse(sm.dataset.tip);
+    dynTip.textContent = ''; dynTip.append(el('b', null, title), el('span', null, vals), el('span', null, formula), el('b', cls || null, result)); dynTip.hidden = false;
     const b = sm.getBoundingClientRect(), w = dynTip.offsetWidth;
     dynTip.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, b.left + b.width / 2 - w / 2)) + 'px';
     dynTip.style.top = (b.top - dynTip.offsetHeight - 8 < 8 ? b.bottom + 8 : b.top - dynTip.offsetHeight - 8) + 'px';
