@@ -2013,9 +2013,13 @@ dash.calc('insights', {
       if (pending(r)) { f.append('—'); return f; }
       f.append(DYN[k][1](r[k]));
       if (r[k] != null && prev && prev[k]) {
-        const raw = r[k] / prev[k] - 1, ch = Math.round(raw * 100) / 100, sm = el('small', null, (ch > 0 ? '↑ +' : ch < 0 ? '↓ −' : '') + d3.format('.0%')(Math.abs(ch)));
+        // Foiz = bugungi ÷ kechagi × 100 (100% — o'zgarmagan, kam — kamaygan, ko'p — oshgan)
+        const ratio = Math.round(r[k] / prev[k] * 100) / 100, ch = ratio - 1, sm = el('small', null, (ch > 0 ? '↑ ' : ch < 0 ? '↓ ' : '') + d3.format('.0%')(ratio));
         if (ch && GOOD_UP[k] != null) sm.className = (ch > 0) === GOOD_UP[k] ? 'good' : 'bad';
-        sm.dataset.tip = DYN[k][0] + ': ' + day(prev.date) + ' — ' + DYN[k][1](prev[k]) + ' → ' + day(r.date) + ' — ' + DYN[k][1](r[k]) + ' (' + sm.textContent.replace(/^[↑↓] /, '') + ')';
+        // CTR kichik: hisob ko'rinishi uchun 3 xona (0.024%)
+        const full = k === 'ctr' ? d3.format('.3%') : DYN[k][1], num = (v) => full(v).replace(' so\'m', '');
+        sm.dataset.tip = DYN[k][0] + ': ' + day(prev.date) + ' — ' + full(prev[k]) + ', ' + day(r.date) + ' — ' + full(r[k]) + '. '
+          + num(r[k]) + ' ÷ ' + num(prev[k]) + ' × 100 = ' + d3.format('.0%')(ratio) + (ch > 0 ? ' (' + d3.format('.0%')(ch) + ' ko\'p)' : ch < 0 ? ' (' + d3.format('.0%')(-ch) + ' kam)' : ' (o\'zgarmagan)');
         f.append(sm);
       }
       return f;
@@ -2028,7 +2032,7 @@ dash.calc('insights', {
       tr.className = 'yd-link'; tr.tabIndex = 0; tr.title = 'Shu kun pul qayerga ketganini ko\'rish';
       tr.addEventListener('click', () => onDay(list[i].r.date)); tr.addEventListener('keydown', (e) => { if (e.key === 'Enter') onDay(list[i].r.date); });
     });
-    tableBox.textContent = ''; tableBox.append(el('p', 'yd-note yd-dyn-legend', '↑ ↓ foizlar — bir kun oldingiga nisbatan. Foiz ustiga olib boring (telefonda bosing): qaysi kun bilan solishtirilgani chiqadi.'), t);
+    tableBox.textContent = ''; tableBox.append(el('p', 'yd-note yd-dyn-legend', 'Foiz = shu kun ÷ bir kun oldingi × 100. Masalan, 11 klikdan keyin 6 klik: 6 ÷ 11 × 100 = 55%. 100% dan kam — kamaygan (↓), ko\'p — oshgan (↑). Foiz ustiga olib borsangiz (telefonda bossangiz), hisobi chiqadi.'), t);
   }
   const dynTip = (() => { const n = el('div', 'yd-dyn-tip'); n.hidden = true; document.body.append(n); return n; })();
   const showDynTip = (sm) => {
