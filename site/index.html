@@ -312,6 +312,7 @@ window.dash = (() => {
 .yd-tile .sub { font-size: 12px; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; line-height: 1.4; }
 @media (max-width: 640px) { .yd-tiles { gap: 12px; } .yd-tile { padding: 14px; } .yd-tile .val { font-size: 19px; } .yd-card { padding: 16px; } .yd-tab { padding: 10px 12px; font-size: 14px; } }
 .yd-chg.good { color: var(--color-ok); }
+.yd-chg[data-tip] { cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
 .yd-chg.bad { color: var(--color-bad); }
 .yd-warn { color: var(--color-bad); }
 .yd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: 16px; }
@@ -1439,13 +1440,22 @@ dash.calc('insights', {
           : cmpRange + ': ' + (row.previous == null ? '—' : FMT[metric](row.previous));
         return;
       }
-      const c = row.change;
+      const c = row.change, ratio = Math.round((1 + c) * 100) / 100;
+      // Foiz = tanlangan davr ÷ solishtirish davri × 100 (Kunlik dinamikadagidek); ROI — farq, foiz punktda
       el.textContent = (c > 0 ? '↑ ' : c < 0 ? '↓ ' : '')
-        + (metric === 'roi' ? grp(Math.round(Math.abs(c) * 100)) + ' p.p.' : d3.format('.0%')(Math.abs(c)))
+        + (metric === 'roi' ? grp(Math.round(Math.abs(c) * 100)) + ' p.p.' : d3.format('.0%')(ratio))
         + ' · ' + cmpRange + ': ' + FMT[metric](row.previous);
-      el.title = 'Tanlangan davr ' + span(p.date_from, p.date_to) + ', solishtirish ' + cmpRange;
-      const g = GOOD_UP[metric];
-      if (g != null && Math.abs(c) >= 0.005) el.classList.add((c > 0) === g ? 'good' : 'bad');
+      const full = metric === 'ctr' ? d3.format('.3%') : FMT[metric], num = (v) => full(v).replace(' so\'m', '');
+      const g = GOOD_UP[metric], cls = g != null && Math.abs(c) >= 0.005 ? ((c > 0) === g ? 'good' : 'bad') : '';
+      el.dataset.tip = JSON.stringify(metric === 'roi'
+        ? ['ROI: ' + span(p.date_from, p.date_to) + ', ' + cmpRange + ' ga nisbatan', cmpRange + ': ' + FMT.roi(row.previous) + '  →  ' + span(p.date_from, p.date_to) + ': ' + FMT.roi(row.current),
+          'Formula: ' + FMT.roi(row.current) + ' − (' + FMT.roi(row.previous) + ')', 'Natija: ' + grp(Math.round(Math.abs(c) * 100)) + ' foiz punkt ' + (c > 0 ? 'yuqori' : 'past'), cls]
+        : [el.closest('.yd-tile').querySelector('.lbl').textContent.replace(' ›', '') + ': ' + span(p.date_from, p.date_to) + ', ' + cmpRange + ' ga nisbatan',
+          cmpRange + ': ' + full(row.previous) + '  →  ' + span(p.date_from, p.date_to) + ': ' + full(row.current),
+          'Formula: ' + num(row.current) + ' ÷ ' + num(row.previous) + ' × 100 = ' + d3.format('.0%')(ratio),
+          'Natija: ' + (c > 0 ? d3.format('.0%')(ratio - 1) + ' ko\'p' : c < 0 ? d3.format('.0%')(1 - ratio) + ' kam' : 'o\'zgarmagan'), cls]);
+      el.removeAttribute('title');
+      if (cls) el.classList.add(cls);
     });
 
     const ins = dash.data('insights');
@@ -1788,10 +1798,15 @@ dash.calc('insights', {
     // Kunlik rasxod: hamma kampaniyalar bo'yicha (lifetime qatorlaridan); bugungi ma'lumot hali kelmagan bo'lsa — kechagisi
     const l = dash.data('lifetime');
     const costOn = (dt) => l.status === 'ok' ? l.data.reduce((a, r) => a + (r.Date === dt ? r.Cost || 0 : 0), 0) : 0;
-    const hasToday = l.status === 'ok' && l.data.some(r => r.Date === td && (r.Impressions || 0) > 0);
-    set('yd-bud-day-lbl', hasToday ? 'bugun, ' + day(td) : 'bugun ' + day(td) + ' — ma\'lumot hali kelmagan');
-    set('yd-bud-day', som(costOn(td)));
-    set('yd-bud-day-sub', 'kecha (' + day(yd) + '): ' + som(costOn(yd)));
+    // Kun — tanlangan davrning oxirgi kuni (Bugun — bugun, Kecha — kecha, 7 kun — oxirgi kun)
+    const dd = isDate(p.date_to) && p.date_to <= td ? p.date_to : td, pd = shift(dd, -1);
+    const hasDay = l.status === 'ok' && l.data.some(r => r.Date === dd && (r.Impressions || 0) > 0);
+    const nm = (x) => x === td ? 'bugun, ' + day(x) : x === yd ? 'kecha, ' + day(x) : day(x);
+    set('yd-bud-day-lbl', nm(dd) + (dd === td && !hasDay ? ' — ma\'lumot hali kelmagan' : ''));
+    set('yd-bud-day', som(costOn(dd)));
+    const nDays = isDate(p.date_from) ? Math.round((new Date(dd) - new Date(p.date_from)) / 864e5) + 1 : 1;
+    set('yd-bud-day-sub', 'oldingi kun (' + day(pd) + '): ' + som(costOn(pd))
+      + (nDays > 1 ? ' · davrda o\'rtacha kuniga ' + som(camps.reduce((a, r) => a + r.cost, 0) / nDays) : ''));
     // Byudjet: yoniq kampaniyalar; kunlik va haftalik alohida (hafta — dushanbadan)
     const part = (per) => { const a = on.filter(r => r.budget != null && r.budget_period === per); return { n: a.length, limit: a.reduce((x, r) => x + r.budget, 0), used: a.reduce((x, r) => x + r.budget_used, 0) }; };
     const wk = part('hafta'), dy = part('kun'), main = wk.n ? wk : dy;
@@ -2051,8 +2066,8 @@ dash.calc('insights', {
     dynTip.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, b.left + b.width / 2 - w / 2)) + 'px';
     dynTip.style.top = (b.top - dynTip.offsetHeight - 8 < 8 ? b.bottom + 8 : b.top - dynTip.offsetHeight - 8) + 'px';
   };
-  document.addEventListener('mouseover', (e) => { const sm = e.target.closest('.yd-dyn small[data-tip]'); if (sm) showDynTip(sm); else if (!dynTip.hidden && !e.target.closest('.yd-dyn-tip')) dynTip.hidden = true; });
-  document.addEventListener('click', (e) => { const sm = e.target.closest('.yd-dyn small[data-tip]'); if (sm) { e.stopPropagation(); showDynTip(sm); } else dynTip.hidden = true; }, true);
+  document.addEventListener('mouseover', (e) => { const sm = e.target.closest('.yd-dyn small[data-tip], .yd-chg[data-tip]'); if (sm) showDynTip(sm); else if (!dynTip.hidden && !e.target.closest('.yd-dyn-tip')) dynTip.hidden = true; });
+  document.addEventListener('click', (e) => { const sm = e.target.closest('.yd-dyn small[data-tip], .yd-chg[data-tip]'); if (sm) { e.stopPropagation(); showDynTip(sm); } else dynTip.hidden = true; }, true);
   window.addEventListener('scroll', () => { dynTip.hidden = true; }, true);
 
   // ---- Kreativlar kutubxonasi ----
