@@ -108,6 +108,7 @@
 .yd-tip { position: absolute; background: var(--cds-surface-popover); border: 1px solid var(--cds-border); border-radius: 8px; box-shadow: 0 8px 24px rgba(0, 0, 0, .5); padding: 6px 10px; font-size: 12px; pointer-events: none; white-space: nowrap; font-variant-numeric: tabular-nums; z-index: 2; color: var(--color-fg); }
 .yd-tip .d { color: var(--cds-text-secondary); }
 .yd-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.yd-tools h3, .yd-tools > div > h3 { margin: 0; }
 .yd-search { font: inherit; font-size: 13px; padding: 6px 10px; border: 1px solid var(--color-border-line); border-radius: 10px; background: var(--color-bg); color: var(--color-fg); min-width: 0; flex: 0 1 16rem; }
 .yd-scroll { overflow: auto; }
 .yd-scroll.tall { max-height: 32rem; }
@@ -288,11 +289,11 @@
     </div>
     <div class="yd-grid">
       <div class="yd-card" id="spend-chart">
-        <div class="yd-tools"><h3>Kunlik xarajat</h3><div class="yd-seg yd-ctype" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
+        <div class="yd-tools"><h3>Kunlik xarajat</h3><div class="yd-seg yd-ctype" data-chart="yd-spend" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
         <div class="yd-chart dash-skeleton" data-source="daily" id="yd-spend"></div>
       </div>
       <div class="yd-card" id="conv-chart">
-        <div class="yd-tools"><h3>Kunlik konversiyalar</h3><div class="yd-seg yd-ctype" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
+        <div class="yd-tools"><h3>Kunlik konversiyalar</h3><div class="yd-seg yd-ctype" data-chart="yd-conv" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
         <div class="yd-chart dash-skeleton" data-source="daily" id="yd-conv"></div>
       </div>
     </div>
@@ -393,7 +394,7 @@
         <p class="yd-note">ROI: 1 lid = 420 000 so'm (Metrika'dagi forma qiymati) deb hisoblangan.</p>
       </div>
       <div class="yd-card">
-        <div class="yd-tools"><h3>Kunlik rasxod</h3><div class="yd-seg yd-ctype" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
+        <div class="yd-tools"><h3>Kunlik rasxod</h3><div class="yd-seg yd-ctype" data-chart="yd-ent-chart" role="group" aria-label="Grafik turi"><button data-t="bar" aria-pressed="true">Ustun</button><button data-t="line" aria-pressed="false">Chiziq</button></div></div>
         <div class="yd-chart" data-source="stats" id="yd-ent-chart"></div>
       </div>
       <div class="yd-card" id="yd-children-card">
@@ -978,11 +979,15 @@ dash.calc('insights', {
     const w = d3.max(texts, s => g.append('text').text(s).node().getComputedTextLength()) || 0;
     g.remove(); return w;
   };
-  let chartType = (() => { try { return localStorage.getItem('yd-chart') === 'line' ? 'line' : 'bar'; } catch (e) { return 'bar'; } })();
-  const syncCtype = () => document.querySelectorAll('.yd-ctype button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.t === chartType)));
+  // Ustun yoki chiziq: har bir grafik uchun alohida (tugmalar faqat o'z grafigiga ta'sir qiladi), brauzerda saqlanadi
+  const chartTypes = (() => { try { return JSON.parse(localStorage.getItem('yd-charts')) || {}; } catch (e) { return {}; } })();
+  const typeOf = (id) => chartTypes[id] === 'line' ? 'line' : 'bar';
+  const syncCtype = () => document.querySelectorAll('.yd-ctype[data-chart]').forEach(g =>
+    g.querySelectorAll('button[data-t]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.t === typeOf(g.dataset.chart)))));
   document.addEventListener('click', (e) => {
-    const b = e.target.closest('.yd-ctype button[data-t]'); if (!b) return;
-    chartType = b.dataset.t; try { localStorage.setItem('yd-chart', chartType); } catch (er) {}
+    const b = e.target.closest('.yd-ctype[data-chart] button[data-t]'); if (!b) return;
+    chartTypes[b.closest('.yd-ctype').dataset.chart] = b.dataset.t;
+    try { localStorage.setItem('yd-charts', JSON.stringify(chartTypes)); } catch (er) {}
     syncCtype(); render();
   });
   syncCtype();
@@ -1008,7 +1013,7 @@ dash.calc('insights', {
       .attr('fill', 'var(--color-fg-muted)').attr('font-size', 12).text(d => day(d.date));
     svg.append('line').attr('x1', ml).attr('x2', W - 4).attr('y1', y(0)).attr('y2', y(0)).attr('stroke', 'var(--cds-chart-axis)');
     const cx = d => x(d.date) + x.bandwidth() / 2;
-    if (chartType === 'line') {
+    if (typeOf(box.id) === 'line') {
       // Chiziq: kunlar nuqtalari, ostida yengil soya
       svg.append('path').datum(rows).attr('fill', color).attr('fill-opacity', 0.12)
         .attr('d', d3.area().x(cx).y0(y(0)).y1(d => y(d[key])).curve(d3.curveMonotoneX));
@@ -1534,9 +1539,10 @@ dash.calc('insights', {
       const tipsH = el('h3', null, 'Tavsiyalar'), tips = el('ul', 'yd-tips');
       adTips(r).forEach(t => tips.append(el('li', t.level, t.text)));
       const chartH = el('div', 'yd-tools'); chartH.append(el('h3', null, 'Kunlik rasxod'));
-      const seg = document.querySelector('.yd-ctype').cloneNode(true); chartH.append(seg);
-      const box = el('div', 'yd-chart');
+      const seg = document.querySelector('.yd-ctype').cloneNode(true); seg.dataset.chart = 'yd-ad-chart'; chartH.append(seg);
+      const box = el('div', 'yd-chart'); box.id = 'yd-ad-chart';
       body.append(head, el('p', 'yd-note', 'Tanlangan davr: ' + (isDate(p.date_from) ? span(p.date_from, p.date_to) : '—')), tiles, tipsH, tips, chartH, box);
+      syncCtype();
       dailyChart(box, 'AdId', r.entity_id, p);
     });
   }
