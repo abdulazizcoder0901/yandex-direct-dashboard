@@ -121,8 +121,23 @@
 .yd-budget-two b { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .yd-budget-two .sub { font-size: 13px; color: var(--color-fg-muted); font-variant-numeric: tabular-nums; }
 @media (max-width: 640px) { .yd-budget-two { grid-template-columns: 1fr; } }
-.yd-bud-limit { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-variant-numeric: tabular-nums; }
-.yd-bud-limit.over .yd-bar i { background: var(--color-bad); }
+/* Byudjet yo'li: chiziq ustida taksi limit tomon yuradi */
+.yd-road { position: relative; padding-top: 30px; margin: 4px 0 0; }
+.yd-road-track { display: block; position: relative; height: 10px; border-radius: 5px; background: repeating-linear-gradient(90deg, #262b36 0 18px, #2f3542 18px 30px); overflow: hidden; }
+.yd-road-track i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #f5c400, #ffd84d); border-radius: 5px; transition: width 1.4s cubic-bezier(.3,.7,.2,1); }
+.yd-road.over .yd-road-track i { background: linear-gradient(90deg, #f5c400, var(--color-bad)); }
+.yd-road-finish { position: absolute; right: 0; top: 18px; width: 10px; height: 24px; border-radius: 2px; background: repeating-conic-gradient(#e8eaf0 0 25%, #1a1a1a 0 50%) 0 0 / 5px 5px; opacity: .8; }
+.yd-car { position: absolute; top: 2px; left: 0; transform: translateX(-50%); transition: left 1.4s cubic-bezier(.3,.7,.2,1); line-height: 0; filter: drop-shadow(0 2px 2px rgba(0,0,0,.4)); }
+.yd-car .w { transform-box: fill-box; transform-origin: center; }
+.yd-car.moving .w { animation: yd-wheel .35s linear infinite; }
+.yd-car.moving svg { animation: yd-bump .3s ease-in-out infinite alternate; }
+.yd-road.over .yd-car.parked svg { animation: yd-shake .5s ease-in-out 2; }
+@keyframes yd-wheel { to { transform: rotate(360deg); } }
+@keyframes yd-bump { to { transform: translateY(-1px); } }
+@keyframes yd-shake { 25% { transform: rotate(-4deg); } 75% { transform: rotate(4deg); } }
+@media (prefers-reduced-motion: reduce) { .yd-car, .yd-road-track i { transition: none; } .yd-car.moving .w, .yd-car.moving svg, .yd-road.over .yd-car.parked svg { animation: none; } }
+.yd-bud-pct { font-size: 13px; font-variant-numeric: tabular-nums; }
+.yd-bud-pct.over { color: var(--color-bad); }
 .yd-bar.wide { width: 100%; height: 8px; }
 .yd-dyn td small { display: block; font-size: 11px; color: var(--color-fg-muted); }
 .yd-dyn td small.good { color: var(--color-ok); }
@@ -324,12 +339,20 @@
         <span class="sub yd-chg dash-skeleton" data-source="totals" data-field="change" data-where="metric=ctr">—</span></div>
     </div>
     <div class="yd-card yd-budget click" id="yd-budget-card" role="button" tabindex="0" title="Qaysi kampaniyaga qancha byudjet qo'yilgan, qancha ketgani va o'zgarishlar">
-      <div class="yd-tools"><h3>Byudjet va rasxod</h3><span class="yd-note">kampaniyalar bo'yicha ›</span></div>
+      <div class="yd-tools"><h3>Byudjet va rasxod</h3>
+        <div class="yd-seg" id="yd-bud-mode" role="group" aria-label="Davr"><button data-m="day" aria-pressed="true">Kunlik</button><button data-m="week" aria-pressed="false">Haftalik</button><button data-m="month" aria-pressed="false">Oylik</button></div>
+        <span class="yd-note">kampaniyalar bo'yicha ›</span></div>
       <div class="yd-budget-two">
-        <div><span class="lbl">Kunlik rasxod (<span id="yd-bud-day-lbl">bugun</span>)</span><b id="yd-bud-day">—</b><span class="sub" id="yd-bud-day-sub">—</span></div>
-        <div><span class="lbl">Umumiy rasxod (<span id="yd-bud-range">tanlangan davr</span>)</span><b id="yd-bud-total">—</b><span class="sub" id="yd-bud-total-sub">—</span></div>
+        <div><span class="lbl" id="yd-bud-spend-lbl">Rasxod</span><b id="yd-bud-spend">—</b><span class="sub" id="yd-bud-spend-sub">—</span></div>
+        <div><span class="lbl" id="yd-bud-limit-lbl">Byudjet</span><b id="yd-bud-limit">—</b><span class="sub" id="yd-bud-limit-sub">—</span></div>
       </div>
-      <div class="yd-bud-limit"><span class="sub" id="yd-bud-limit">—</span><span class="yd-bar wide"><i id="yd-bud-bar"></i></span></div>
+      <div class="yd-road" id="yd-road" aria-hidden="true">
+        <span class="yd-car" id="yd-car"><svg viewBox="0 0 64 30" width="56" height="26" aria-hidden="true"><path d="M6 21 L6 15 Q6 12 9 11.5 L17 10 L23 4.5 Q24.5 3 27 3 L42 3 Q45 3 47 5 L52 10.5 L58 12 Q61 13 61 16 L61 21 Z" fill="#ffcc00" stroke="#1a1a1a" stroke-width="1.2"/><path d="M25 6 Q26 5 27.5 5 L35 5 L35 10 L21 10 Z M37 5 L42 5 Q44 5 45.5 6.5 L49 10 L37 10 Z" fill="#9fd3ff" stroke="#1a1a1a" stroke-width=".8"/><g fill="#1a1a1a"><rect x="9" y="14" width="3" height="3"/><rect x="15" y="14" width="3" height="3"/><rect x="21" y="14" width="3" height="3"/><rect x="27" y="14" width="3" height="3"/><rect x="33" y="14" width="3" height="3"/><rect x="39" y="14" width="3" height="3"/><rect x="45" y="14" width="3" height="3"/><rect x="51" y="14" width="3" height="3"/><rect x="12" y="17" width="3" height="3"/><rect x="18" y="17" width="3" height="3"/><rect x="24" y="17" width="3" height="3"/><rect x="30" y="17" width="3" height="3"/><rect x="36" y="17" width="3" height="3"/><rect x="42" y="17" width="3" height="3"/><rect x="48" y="17" width="3" height="3"/><rect x="54" y="17" width="3" height="3"/></g><rect x="31" y="0.5" width="8" height="3" rx="1" fill="#ffcc00" stroke="#1a1a1a" stroke-width=".8"/><circle cx="59.5" cy="15" r="1.3" fill="#fff6c2"/><g class="w"><circle cx="17" cy="22" r="5" fill="#1a1a1a"/><circle cx="17" cy="22" r="2" fill="#bbb"/><rect x="16.5" y="17.5" width="1" height="9" fill="#555"/></g><g class="w"><circle cx="49" cy="22" r="5" fill="#1a1a1a"/><circle cx="49" cy="22" r="2" fill="#bbb"/><rect x="48.5" y="17.5" width="1" height="9" fill="#555"/></g></svg></span>
+        <span class="yd-road-track"><i id="yd-bud-bar"></i></span>
+        <span class="yd-road-finish" title="Byudjet chegarasi"></span>
+      </div>
+      <span class="yd-bud-pct" id="yd-bud-pct">—</span>
+      <span class="yd-note" id="yd-bud-total">—</span>
       <span class="yd-note" id="yd-bud-chg">—</span>
     </div>
     <div class="yd-grid two">
@@ -1573,37 +1596,87 @@ dash.calc('insights', {
     return out.sort((x, y) => (x.h.from || '') < (y.h.from || '') ? 1 : -1);
   };
   const chgText = (h, p) => { if (!p) return 'birinchi'; const x = h.amount / p.amount - 1; return grp(p.amount) + ' → ' + grp(h.amount) + ' (' + (x > 0 ? '↑ +' : '↓ −') + d3.format('.0%')(Math.abs(x)) + ')'; };
+  // Kunlik / Haftalik / Oylik — tanlov brauzerda saqlanadi
+  let budMode = (() => { try { return localStorage.getItem('yd-budmode') || 'day'; } catch (e) { return 'day'; } })();
+  if (!['day', 'week', 'month'].includes(budMode)) budMode = 'day';
+  const syncBudMode = () => document.querySelectorAll('#yd-bud-mode button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.m === budMode)));
+  syncBudMode();
+  document.getElementById('yd-bud-mode').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const b = e.target.closest('button[data-m]'); if (!b) return;
+    budMode = b.dataset.m; try { localStorage.setItem('yd-budmode', budMode); } catch (er) {}
+    syncBudMode(); renderBudgetCard();
+  });
+  // Taksi: qiymat o'zgarganda boshidan limit tomon yuradi; o'zgarmasa joyida turadi
+  let carKey = null;
+  function driveCar(frac, over, key) {
+    const road = document.getElementById('yd-road'), car = document.getElementById('yd-car'), bar = document.getElementById('yd-bud-bar');
+    road.classList.toggle('over', over);
+    if (key === carKey) return;
+    carKey = key;
+    const go = () => {
+      car.classList.remove('parked'); car.classList.add('moving');
+      car.style.left = 'calc(' + frac + ' * (100% - 64px) + 28px)'; bar.style.width = (frac * 100) + '%';
+    };
+    car.style.transition = bar.style.transition = 'none';
+    car.style.left = '28px'; bar.style.width = '0%';
+    void car.offsetWidth;
+    car.style.transition = bar.style.transition = '';
+    requestAnimationFrame(go);
+    clearTimeout(driveCar.t);
+    driveCar.t = setTimeout(() => { car.classList.remove('moving'); car.classList.add('parked'); }, 1450);
+  }
   function renderBudgetCard() {
     const e = dash.data('entities'), p = dash.params();
     const set = (id, v) => { document.getElementById(id).textContent = v; };
-    if (e.status !== 'ok') { ['yd-bud-day', 'yd-bud-day-sub', 'yd-bud-total', 'yd-bud-total-sub', 'yd-bud-chg', 'yd-bud-limit'].forEach(i => set(i, '—')); return; }
+    if (e.status !== 'ok') { ['yd-bud-spend', 'yd-bud-spend-sub', 'yd-bud-limit', 'yd-bud-limit-sub', 'yd-bud-pct', 'yd-bud-total', 'yd-bud-chg'].forEach(i => set(i, '—')); return; }
     const camps = e.data.filter(r => r.level === 'campaign'), on = camps.filter(r => r.status === 'Yoniq');
     const td = today(), yd = shift(td, -1);
-    // Kunlik rasxod: hamma kampaniyalar bo'yicha (lifetime qatorlaridan); bugungi ma'lumot hali kelmagan bo'lsa — kechagisi
     const l = dash.data('lifetime');
-    const costOn = (dt) => l.status === 'ok' ? l.data.reduce((a, r) => a + (r.Date === dt ? r.Cost || 0 : 0), 0) : 0;
-    // Kun — tanlangan davrning oxirgi kuni (Bugun — bugun, Kecha — kecha, 7 kun — oxirgi kun)
-    const dd = isDate(p.date_to) && p.date_to <= td ? p.date_to : td, pd = shift(dd, -1);
+    const costIn = (a, b) => l.status === 'ok' ? l.data.reduce((x, r) => x + (r.Date >= a && r.Date <= b ? r.Cost || 0 : 0), 0) : 0;
+    // Davr tanlangan filtrning oxirgi kuniga bog'lanadi (Kecha — kecha, kun/hafta/oy shu kundan)
+    const dd = isDate(p.date_to) && p.date_to <= td ? p.date_to : td;
+    const mon = shift(dd, -((new Date(dd + 'T00:00:00Z').getUTCDay() + 6) % 7)), m1 = monthStart(dd);
+    const dim = +monthEnd(dd).slice(8, 10), pm1 = monthStart(shift(m1, -1));
     const hasDay = l.status === 'ok' && l.data.some(r => r.Date === dd && (r.Impressions || 0) > 0);
-    const nm = (x) => x === td ? 'bugun, ' + day(x) : x === yd ? 'kecha, ' + day(x) : day(x);
-    set('yd-bud-day-lbl', nm(dd) + (dd === td && !hasDay ? ' — ma\'lumot hali kelmagan' : ''));
-    set('yd-bud-day', som(costOn(dd)));
-    const nDays = isDate(p.date_from) ? Math.round((new Date(dd) - new Date(p.date_from)) / 864e5) + 1 : 1;
-    set('yd-bud-day-sub', 'oldingi kun (' + day(pd) + '): ' + som(costOn(pd))
-      + (nDays > 1 ? ' · davrda o\'rtacha kuniga ' + som(camps.reduce((a, r) => a + r.cost, 0) / nDays) : ''));
-    // Byudjet: yoniq kampaniyalar; kunlik va haftalik alohida (hafta — dushanbadan)
-    const part = (per) => { const a = on.filter(r => r.budget != null && r.budget_period === per); return { n: a.length, limit: a.reduce((x, r) => x + r.budget, 0), used: a.reduce((x, r) => x + r.budget_used, 0) }; };
-    const wk = part('hafta'), dy = part('kun'), main = wk.n ? wk : dy;
-    const txt = [];
-    if (wk.n) txt.push('Haftalik byudjet ' + som(wk.limit) + ' · shu hafta (' + day(shift(td, -((new Date(td + 'T00:00:00Z').getUTCDay() + 6) % 7))) + ' dan) ishlatildi ' + som(wk.used) + ' (' + d3.format('.0%')(wk.used / wk.limit) + ') · qoldi ' + som(Math.max(0, wk.limit - wk.used)));
-    if (dy.n) txt.push('Kunlik byudjet ' + som(dy.limit) + ' · bugun ishlatildi ' + som(dy.used) + ' · qoldi ' + som(Math.max(0, dy.limit - dy.used)));
-    set('yd-bud-limit', txt.length ? txt.join('  ·  ') : on.length ? 'Yoniq kampaniyaning byudjeti kiritilmagan' : 'Yoniq kampaniya yo\'q');
-    document.querySelector('.yd-bud-limit').classList.toggle('over', main.limit > 0 && main.used > main.limit);
-    document.getElementById('yd-bud-bar').style.width = (main.limit ? Math.min(100, 100 * main.used / main.limit) : 0) + '%';
+    // Yoniq kampaniyalar byudjeti: haftalik va kunlik (kunlik byudjet haftaga ×7)
+    const wkB = on.filter(r => r.budget != null && r.budget_period === 'hafta').reduce((a, r) => a + r.budget, 0);
+    const dyB = on.filter(r => r.budget != null && r.budget_period === 'kun').reduce((a, r) => a + r.budget, 0);
+    const so = (v) => grp(Math.round(v));
+    let spend, prevTxt, label, limit, limitLbl, limitSub;
+    if (budMode === 'week') {
+      spend = costIn(mon, dd);
+      label = 'Haftalik rasxod (' + (mon === dd ? day(dd) : day(mon) + ' – ' + day(dd)) + ')';
+      prevTxt = 'o\'tgan hafta (' + day(shift(mon, -7)) + ' – ' + day(shift(mon, -1)) + '): ' + som(costIn(shift(mon, -7), shift(mon, -1)));
+      limit = wkB + dyB * 7; limitLbl = 'Haftalik byudjet';
+      limitSub = dyB ? so(wkB) + ' + ' + so(dyB) + ' × 7' : 'kabinetdagi haftalik byudjet (dushanbadan yakshanbagacha)';
+    } else if (budMode === 'month') {
+      spend = costIn(m1, dd);
+      label = 'Oylik rasxod (' + span(m1, dd) + ')';
+      prevTxt = 'o\'tgan oy (' + MONTHS_FULL[+pm1.slice(5, 7) - 1] + '): ' + som(costIn(pm1, shift(m1, -1)));
+      limit = (wkB / 7 + dyB) * dim; limitLbl = 'Oylik byudjet (' + MONTHS_FULL[+m1.slice(5, 7) - 1] + ')';
+      limitSub = 'Formula: ' + (wkB ? so(wkB) + ' ÷ 7' : '') + (wkB && dyB ? ' + ' : '') + (dyB ? so(dyB) : '') + ' × ' + dim + ' kun = ' + so(limit);
+    } else {
+      spend = costIn(dd, dd);
+      label = 'Kunlik rasxod (' + (dd === td ? 'bugun, ' : dd === yd ? 'kecha, ' : '') + day(dd) + (dd === td && !hasDay ? ' — ma\'lumot hali kelmagan' : '') + ')';
+      prevTxt = 'oldingi kun (' + day(shift(dd, -1)) + '): ' + som(costIn(shift(dd, -1), shift(dd, -1)));
+      // Haftalik byudjetda Yandex bir kunda ko'pi bilan 40% sarflaydi (kabinet kuzatuvi: 200 000 / 500 000, 100 000 / 250 000)
+      limit = wkB * 0.4 + dyB; limitLbl = 'Bir kunlik chegara';
+      limitSub = (wkB ? 'Formula: ' + so(wkB) + ' × 40% = ' + so(wkB * 0.4) + ' (Yandex haftalik byudjetning bir kunda ko\'pi bilan 40% ini sarflaydi) · o\'rtacha kuniga ' + so(wkB) + ' ÷ 7 = ' + so(wkB / 7) : '')
+        + (dyB ? (wkB ? ' · ' : '') + 'kunlik byudjet ' + so(dyB) : '');
+    }
+    set('yd-bud-spend-lbl', label); set('yd-bud-spend', som(spend)); set('yd-bud-spend-sub', prevTxt);
+    set('yd-bud-limit-lbl', limitLbl);
+    set('yd-bud-limit', limit ? som(limit) : on.length ? 'kiritilmagan' : 'yoniq kampaniya yo\'q');
+    set('yd-bud-limit-sub', limit ? limitSub : 'Byudjet kampaniya ichida kiritiladi');
+    const pct = limit ? spend / limit : 0, over = limit > 0 && spend > limit;
+    const pe = document.getElementById('yd-bud-pct');
+    pe.textContent = limit ? 'Ishlatildi: ' + so(spend) + ' ÷ ' + so(limit) + ' × 100 = ' + d3.format('.0%')(pct)
+      + (over ? ' · chegaradan ' + som(spend - limit) + ' oshdi' : ' · qoldi ' + som(limit - spend)) : '—';
+    pe.classList.toggle('over', over);
+    driveCar(limit ? Math.min(1, pct) : 0, over, budMode + '|' + Math.round(pct * 1000));
     const total = camps.reduce((a, r) => a + r.cost, 0), life = camps.reduce((a, r) => a + r.life_cost, 0);
-    set('yd-bud-range', isDate(p.date_from) ? span(p.date_from, p.date_to) : 'tanlangan davr');
-    set('yd-bud-total', som(total));
-    set('yd-bud-total-sub', 'reklama boshidan jami ' + som(life));
+    set('yd-bud-total', 'Tanlangan davr (' + (isDate(p.date_from) ? span(p.date_from, p.date_to) : '—') + '): ' + som(total) + ' · reklama boshidan jami ' + som(life));
     const last = budgetChanges(camps).find(x => x.prev);
     set('yd-bud-chg', last ? 'Oxirgi o\'zgarish: ' + last.c.name + ' — ' + grp(last.prev.amount) + ' so\'m (' + budgetSpan(last.prev) + ') → ' + grp(last.h.amount) + ' so\'m (' + budgetSpan(last.h) + ')'
       : budgetChanges(camps).length ? 'Byudjet o\'zgarmagan' : 'Byudjet summalari hali kiritilmagan (Yandex API bermaydi)');
@@ -1641,7 +1714,7 @@ dash.calc('insights', {
   document.getElementById('yd-budget-all').addEventListener('click', () => openBudget([]));
   const budCard = document.getElementById('yd-budget-card');
   budCard.addEventListener('click', () => openBudget([]));
-  budCard.addEventListener('keydown', (e) => { if (e.key === 'Enter') openBudget([]); });
+  budCard.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.target.closest('button')) openBudget([]); });
   function openRuns(ent) {
     openModal(ent.name + ': yoqilgan sanalar', false, (body) => body.append(
       miniTable(['№', 'Yoqilgan', 'O\'chgan', 'Kunlar', 'Rasxod'], (ent.runs || []).map((r, i) =>
