@@ -340,9 +340,8 @@ window.dash = (() => {
 /* Byudjet yo'li: chiziq ustida taksi limit tomon yuradi */
 .yd-road { position: relative; padding-top: 30px; margin: 4px 0 0; }
 .yd-road-track { display: block; position: relative; height: 10px; border-radius: 5px; background: repeating-linear-gradient(90deg, #262b36 0 18px, #2f3542 18px 30px); overflow: hidden; }
-.yd-road-track i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #f5c400, #ffd84d); border-radius: 5px; transition: width 1.4s cubic-bezier(.3,.7,.2,1); }
-.yd-road.over .yd-road-track i { background: linear-gradient(90deg, #f5c400, var(--color-bad)); }
-.yd-road-finish { position: absolute; right: 0; top: 18px; width: 10px; height: 24px; border-radius: 2px; background: repeating-conic-gradient(#e8eaf0 0 25%, #1a1a1a 0 50%) 0 0 / 5px 5px; opacity: .8; }
+.yd-road-track i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #f5c400, #ffd84d); border-radius: 5px; clip-path: inset(0 100% 0 0 round 5px); transition: clip-path 1.4s cubic-bezier(.3,.7,.2,1); }
+.yd-road-finish { position: absolute; right: 0; top: 18px; transition: left .3s, right .3s; width: 10px; height: 24px; border-radius: 2px; background: repeating-conic-gradient(#e8eaf0 0 25%, #1a1a1a 0 50%) 0 0 / 5px 5px; opacity: .8; }
 .yd-car { position: absolute; top: 2px; left: 0; transform: translateX(-50%); transition: left 1.4s cubic-bezier(.3,.7,.2,1); line-height: 0; filter: drop-shadow(0 2px 2px rgba(0,0,0,.4)); }
 .yd-car .w { transform-box: fill-box; transform-origin: center; }
 .yd-car.moving .w { animation: yd-wheel .35s linear infinite; }
@@ -351,7 +350,7 @@ window.dash = (() => {
 @keyframes yd-wheel { to { transform: rotate(360deg); } }
 @keyframes yd-bump { to { transform: translateY(-1px); } }
 @keyframes yd-shake { 25% { transform: rotate(-4deg); } 75% { transform: rotate(4deg); } }
-@media (prefers-reduced-motion: reduce) { .yd-car, .yd-road-track i { transition: none; } .yd-car.moving .w, .yd-car.moving svg, .yd-road.over .yd-car.parked svg { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .yd-car, .yd-road-track i, .yd-road-finish { transition: none; } .yd-car.moving .w, .yd-car.moving svg, .yd-road.over .yd-car.parked svg { animation: none; } }
 .yd-bud-pct { font-size: 13px; font-variant-numeric: tabular-nums; }
 .yd-bud-pct.over { color: var(--color-bad); }
 .yd-bar.wide { width: 100%; height: 8px; }
@@ -1825,17 +1824,26 @@ dash.calc('insights', {
   });
   // Taksi: qiymat o'zgarganda boshidan limit tomon yuradi; o'zgarmasa joyida turadi
   let carKey = null;
-  function driveCar(frac, over, key) {
+  // ratio = rasxod ÷ chegara. Oshmagan bo'lsa chiziq oxiri — chegara; oshsa chiziq oxiri — rasxod,
+  // marra bayrog'i chegara joyida turadi va chiziq o'sha joydan boshlab asta qizaradi.
+  function driveCar(ratio, over, key) {
     const road = document.getElementById('yd-road'), car = document.getElementById('yd-car'), bar = document.getElementById('yd-bud-bar');
+    const flag = road.querySelector('.yd-road-finish');
     road.classList.toggle('over', over);
     if (key === carKey) return;
     carKey = key;
+    const frac = over ? 1 : Math.max(0, ratio), lim = over ? 100 / ratio : 100;
+    bar.style.background = over
+      ? 'linear-gradient(90deg, #f5c400 0%, #ffd84d ' + lim + '%, #ff9f43 ' + (lim + (100 - lim) * 0.4) + '%, var(--color-bad) 100%)'
+      : '';
+    if (over) { flag.style.right = 'auto'; flag.style.left = 'calc(' + lim + '% - 5px)'; } else { flag.style.left = ''; flag.style.right = '0'; }
+    flag.title = over ? 'Byudjet chegarasi: shu joydan keyingi qism — chegaradan oshgan rasxod' : 'Byudjet chegarasi';
     const go = () => {
       car.classList.remove('parked'); car.classList.add('moving');
-      car.style.left = 'calc(' + frac + ' * (100% - 64px) + 28px)'; bar.style.width = (frac * 100) + '%';
+      car.style.left = 'calc(' + frac + ' * (100% - 64px) + 28px)'; bar.style.clipPath = 'inset(0 ' + (100 - frac * 100) + '% 0 0 round 5px)';
     };
     car.style.transition = bar.style.transition = 'none';
-    car.style.left = '28px'; bar.style.width = '0%';
+    car.style.left = '28px'; bar.style.clipPath = 'inset(0 100% 0 0 round 5px)';
     void car.offsetWidth;
     car.style.transition = bar.style.transition = '';
     requestAnimationFrame(go);
@@ -1890,7 +1898,7 @@ dash.calc('insights', {
     pe.textContent = limit ? 'Ishlatildi: ' + so(spend) + ' ÷ ' + so(limit) + ' × 100 = ' + d3.format('.0%')(pct)
       + (over ? ' · chegaradan ' + som(spend - limit) + ' oshdi' : ' · qoldi ' + som(limit - spend)) : '—';
     pe.classList.toggle('over', over);
-    driveCar(limit ? Math.min(1, pct) : 0, over, budMode + '|' + Math.round(pct * 1000));
+    driveCar(limit ? pct : 0, over, budMode + '|' + Math.round(pct * 1000));
     const total = camps.reduce((a, r) => a + r.cost, 0), life = camps.reduce((a, r) => a + r.life_cost, 0);
     set('yd-bud-total', 'Tanlangan davr (' + (isDate(p.date_from) ? span(p.date_from, p.date_to) : '—') + '): ' + som(total) + ' · reklama boshidan jami ' + som(life));
     const last = budgetChanges(camps).find(x => x.prev);
