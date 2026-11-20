@@ -1,11 +1,10 @@
 name: Ma'lumotni yangilash
 
-# Har 15 daqiqada Yandex Direct'dan ma'lumot olib, "data" branchiga data.json yozadi.
+# Yandex Direct'dan ma'lumot olib, "data" branchiga data.json yozadi.
 # Netlify'dagi sayt shu faylni o'qiydi, shuning uchun saytni qayta deploy qilish kerak emas.
+# Avtomatik jadval o'chirilgan (token ishlatilmasin): faqat qo'lda yoki saytdagi "↻" tugmasi bilan ishlaydi.
 on:
-  schedule:
-    - cron: "*/15 * * * *" # zaxira: GitHub buni soatlab kechiktiradi, asosiy jadval Netlify'da (netlify/functions)
-  workflow_dispatch: # Actions sahifasidan qo'lda ishga tushirish
+  workflow_dispatch: # Actions sahifasidan yoki saytdagi tugmadan (netlify/functions/refresh.mjs)
 
 permissions:
   contents: write

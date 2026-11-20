@@ -14,11 +14,11 @@ Davr filtrlari: Bugun, Kecha, 7 kun, 14 kun, 30 kun, Shu oy, O'tgan oy, oy tanlo
 - `scripts/fetch_data.py` Yandex Direct API'dan butun tarix bo'yicha kunlik statistikani (kampaniya, kanal, yosh va jins, hudud), balansni va Metrika ma'lumotini olib, `site/data.json` faylini yozadi. Faqat Python standart kutubxonasi kerak.
 - `src/dashboard.html` Claude ichidagi dashboard sahifasining aynan o'zi; `src/shell.html` uni oddiy sayt sifatida ishlatadi (ma'lumotni `data.json`'dan oladi va sana bo'yicha ajratadi).
 - `scripts/build_page.py` ikkalasini `site/index.html` ga yig'adi. `src/` dagi fayllarni o'zgartirsangiz, uni qayta ishga tushiring.
-- `.github/workflows/update.yml` har 10 daqiqada Yandex'dan ma'lumot olib, uni `data` branchiga `data.json` qilib yozadi (branchda doim bitta commit, tarix o'smaydi).
-- Sayt **Netlify**'da: `site/` papkasi, build yo'q (`netlify.toml`). Sahifa ma'lumotni `data` branchidan o'qiydi va ochiq turganda har 10 daqiqada qayta o'qiydi. Shuning uchun Netlify faqat kod o'zgarganda deploy qiladi, ma'lumot yangilanganda emas.
+- `.github/workflows/update.yml` Yandex'dan ma'lumot olib, uni `data` branchiga `data.json` qilib yozadi (branchda doim bitta commit, tarix o'smaydi). **Avtomatik jadval o'chirilgan**: u faqat qo'lda (Actions → Run workflow) yoki saytdagi "↻" tugmasi bilan ishlaydi.
+- Sayt **Netlify**'da: `site/` papkasi, build yo'q (`netlify.toml`). Sahifa ma'lumotni `data` branchidan o'qiydi. Shuning uchun Netlify faqat kod o'zgarganda deploy qiladi, ma'lumot yangilanganda emas.
 - `data/manual_ads.json`, `data/manual_campaigns.json`, `data/thumbs/`: Yandex API bermaydigan narsalar (kreativ sarlavhalari, rasmlari, kampaniya holati), kabinet skrinshotlaridan.
 
-**Repo public bo'lishi kerak:** sahifa `data.json` ni `raw.githubusercontent.com` dan o'qiydi, private repoda bu ishlamaydi. Public repoda GitHub Actions ham bepul (har 10 daqiqada ishlash oyiga ~4 300 daqiqa).
+**Repo public bo'lishi kerak:** sahifa `data.json` ni `raw.githubusercontent.com` dan o'qiydi, private repoda bu ishlamaydi. Public repoda GitHub Actions ham bepul.
 
 ## 1. Yandex OAuth token olish
 
@@ -51,15 +51,14 @@ So'ng brauzerda http://localhost:8000 ni oching.
 2. **Actions → Ma'lumotni yangilash → Run workflow** bilan birinchi marta qo'lda ishga tushiring. Tugagach, repoda `data` branchi paydo bo'ladi.
 3. Netlify'da: **Add new site → Import an existing project → GitHub** → `yandex-direct-dashboard` reposini tanlang. Sozlamalar `netlify.toml` dan o'zi olinadi (Publish directory: `site`). **Deploy** ni bosing.
 
-4. Har 15 daqiqalik yangilash va "↻ Yangilash" tugmasi uchun (GitHub o'z jadvalini soatlab kechiktiradi,
-   shuning uchun jadvalni Netlify yuritadi):
+4. "↻ Yangilash" tugmasi uchun:
    - GitHub'da fine-grained token yarating: **Settings → Developer settings → Fine-grained tokens → Generate new token**;
      Repository access: **Only select repositories → yandex-direct-dashboard**; Permissions → **Actions: Read and write**.
    - Netlify'da: **Project configuration → Environment variables → Add a variable**: `GH_ACTIONS_TOKEN` = shu token.
    - **Deploys → Trigger deploy** bilan qayta deploy qiling (o'zgaruvchi funksiyalarga shundan keyin yetib boradi).
 
-   Shundan keyin `netlify/functions/scheduled-refresh.mjs` har 15 daqiqada, `netlify/functions/refresh.mjs`
-   esa tugma bosilganda GitHub'dagi "Ma'lumotni yangilash"ni ishga tushiradi.
+   Shundan keyin `netlify/functions/refresh.mjs` tugma bosilganda GitHub'dagi "Ma'lumotni yangilash"ni ishga tushiradi.
+   Avtomatik (jadval bo'yicha) yangilash yo'q.
 
 **Muhim:** Netlify sayti internetda ochiq bo'ladi: manzilni bilgan har kim statistikani ko'ra oladi. Parol bilan yopish Netlify'ning pullik rejalarida bor.
 

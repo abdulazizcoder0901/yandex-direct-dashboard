@@ -495,7 +495,7 @@ window.dash = (() => {
       <span>solishtirish <b id="yd-cmp-text">—</b></span>
       <span><span class="yd-dot" id="yd-metrika-dot"></span>Metrika <b data-source="metrika" data-field="visits" data-row="0" class="dash-skeleton">—</b> tashrif</span>
       <span>balans <b data-source="balance" data-field="amount" data-row="0" class="dash-skeleton">—</b> <span id="yd-runway"></span></span>
-      <span class="yd-hide-narrow" title="Ma'lumot Yandex'dan har soatda (Toshkent 06:07–23:07) olinadi; sahifa yangisini o'zi yuklaydi">keyingi ma'lumot <b id="yd-next">—</b></span>
+      <span class="yd-hide-narrow" title="Ma'lumot Yandex'dan faqat ↻ bosilganda olinadi">avto-yangilash <b id="yd-next">o'chiq</b></span>
     </div>
   </header>
   <div class="yd-filters" id="yd-filters" role="group" aria-label="Davr">
@@ -2212,15 +2212,8 @@ dash.calc('insights', {
     if (!rows.length) { const td = tb.insertRow().insertCell(); td.colSpan = 2; td.className = 'yd-note'; td.textContent = 'Ma\'lumot yo\'q.'; }
   }
 
-  // ---- Yangilash: ma'lumot Yandex'dan har soatda olinadi, sahifa har 2 daqiqada yangisi bormi tekshiradi ----
+  // ---- Yangilash: avtomatik yangilash o'chirilgan, ma'lumot Yandex'dan faqat ↻ bosilganda olinadi ----
   const QUERIES = ['stats', 'stats_cmp', 'lifetime', 'placements', 'audience', 'regions', 'metrika', 'balance', 'videos', 'images'];
-  const EVERY = 2 * 60 * 1000;
-  const nextData = () => {
-    // Soatlik yangilash har soat HH:07 da (kecha-kunduz) boshlanadi va ~5 daqiqada yoziladi
-    const t = new Date(Date.now() + 5 * 3600e3), h = t.getUTCHours(), m = t.getUTCMinutes();
-    return '~' + String((m < 12 ? h : h + 1) % 24).padStart(2, '0') + ':12';
-  };
-  const stamp = () => { document.getElementById('yd-next').textContent = nextData(); };
   // fresh: tugma bosilganda Yandex'dan yangi so'rov (saytda); vaqt bo'yicha esa oxirgi ma'lumot qayta o'qiladi
   const refreshAll = (fresh) => {
     // Nisbiy davr (Bugun, 7 kun, Shu oy...) kun almashganda yangi sanaga suriladi
@@ -2233,7 +2226,6 @@ dash.calc('insights', {
     else if (fresh === true && dash.reload) dash.reload();
     else if (dash.checkNew) dash.checkNew();
     else QUERIES.forEach((id, i) => setTimeout(() => dash.refresh(id), i * 1500));
-    stamp();
   };
   // Tugma: saqlangan eng oxirgi ma'lumotni yuklaydi va natijani aytadi (yangi bormi, yo'qmi)
   const toast = (() => { const t = document.createElement('div'); t.className = 'yd-toast'; t.hidden = true; t.setAttribute('role', 'status'); document.body.append(t); return t; })();
@@ -2246,13 +2238,11 @@ dash.calc('insights', {
     while (dash._busy) await new Promise(r => setTimeout(r, 300));
     const dt = document.getElementById('yd-data-time').textContent.split(' · ')[0];
     say(dash._sha && dash._sha !== before ? 'Yangi ma\'lumot yuklandi (' + dt + ').'
-      : 'Eng oxirgi ma\'lumot shu: ' + dt + '. Yandex\'dan har soatda olinadi, keyingisi ' + nextData() + ' da.');
+      : 'Eng oxirgi ma\'lumot shu: ' + dt + '. Yangisi bir necha daqiqada tayyor bo\'ladi, keyin ↻ ni yana bosing.');
   });
   const costTile = document.getElementById('yd-cost-tile');
   costTile.addEventListener('click', openSpendDays);
   costTile.addEventListener('keydown', (e) => { if (e.key === 'Enter') openSpendDays(); });
-  setInterval(refreshAll, EVERY);
-  stamp();
 
   dash.onData(render);
   // Havoladagi #bo'lim ustun, bo'lmasa oxirgi ochilgan bo'lim
@@ -2264,7 +2254,7 @@ dash.calc('insights', {
 <p class="yd-foot" id="yd-foot"></p>
 </div>
 <script>
-// Ma'lumot GitHub'dagi "data" branchidan (har 15 daqiqada yangilanadi); kompyuterda sinash uchun yonidagi data.json.
+// Ma'lumot GitHub'dagi "data" branchidan (faqat ↻ bosilganda yangilanadi); kompyuterda sinash uchun yonidagi data.json.
 // Avval oxirgi commit SHA'si olinadi: branch manzili 5 daqiqagacha keshlanadi, SHA manzili esa doim yangi.
 const DATA_URLS = async () => {
   const sha = await dash._latestSha();
